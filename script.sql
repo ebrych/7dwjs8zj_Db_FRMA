@@ -195,3 +195,14 @@ INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos',
 INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión cursos por grado','ccc','Cursos')
 INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Gestión de docentes','administra el registro y datos de docentes','ccc','Docentes')
 INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Gestión de administrativos','administra el registro y datos de personal administrativo','ccc','Administrativo')
+
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,1)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,2)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,3)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,4)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,5)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,6)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,7)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,8)
+INSERT INTO tb_permisos_cargos (id_cargo,id_permiso) VALUES (1,9)
+
