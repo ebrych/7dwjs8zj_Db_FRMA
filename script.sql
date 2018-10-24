@@ -193,3 +193,5 @@ INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Seccione
 INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Matriculas','Registra nuevas Matriculas','ccc','Matriculas')
 INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos','Creación de cursos','ccc','Cursos')
 INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión cursos por grado','ccc','Cursos')
+INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Gestión de docentes','administra el registro y datos de docentes','ccc','Docentes')
+INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Gestión de administrativos','administra el registro y datos de personal administrativo','ccc','Administrativo')
