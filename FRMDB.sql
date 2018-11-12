@@ -1,4 +1,5 @@
-use master
+--use master
+--drop DATABASE FRMDB
 create database FRMDB
 use FRMDB
 --===========================ESTRUCTURA
@@ -28,6 +29,7 @@ begin
     descripcion	varchar(100) not null,
     placeholder	varchar(200),
     id_cargo int ,
+    estado	tinyint default 1,
     PRIMARY KEY (id),
     FOREIGN KEY (id_cargo) REFERENCES tb_cargo(id)
     )
@@ -202,7 +204,8 @@ begin
     INSERT INTO tb_cargo (descripcion) VALUES ('Root')
     SELECT * FROM tb_cargo
 
-    INSERT INTO tb_usuario (nombre,apellidos,tipo_doc,num_doc,id_cargo,usuario,pass) VALUES ('Eber David','Baldarrago',1,'43744482',2,'Root','123')
+    INSERT INTO tb_usuario (nombre,apellidos,tipo_doc,num_doc,usuario,pass) VALUES ('Eber David','Baldarrago',1,'43744482','Root','123')
+    SELECT * FROM tb_usuario
 
     INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (1,1)
     INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (2,1)	
@@ -302,17 +305,13 @@ create procedure SP_CONTROL_TOKENS(
 go
 
 --tipoDocumento
-create procedure SP_LISTAR_TIPO_DOC(
-    @usuario bigint
-    )
+create procedure SP_LISTAR_TIPO_DOC
     as
     SELECT id,descripcion FROM tb_tipo_documento 
 go
 
 --cargos
-create procedure SP_LISTAR_CARGOS(
-    @usuario bigint
-    )
+create procedure SP_LISTAR_CARGOS
     as 
     SELECT cr.id,cr.descripcion,cr.estado,
     case
@@ -322,14 +321,12 @@ create procedure SP_LISTAR_CARGOS(
     FROM tb_cargo cr WHERE id != 2
 go
 create procedure SP_AGREGAR_CARGO(
-    @usuario bigint,
     @descripcion varchar(100)
     )
     as
     INSERT INTO tb_cargo (descripcion) VALUES (@descripcion)
 go
 create procedure SP_ACTUALIZA_CARGO(
-    @usuario bigint,
     @id int,
     @descripcion varchar(100)
     )
@@ -346,9 +343,7 @@ go
 
 
 --cursos
-create procedure SP_LISTAR_CURSOS(
-    @usuario bigint
-    )
+create procedure SP_LISTAR_CURSOS
     as
     SELECT cr.id,cr.descripcion,cr.estado,
     case
@@ -358,14 +353,12 @@ create procedure SP_LISTAR_CURSOS(
     FROM tb_cursos cr  
 go
 create procedure SP_AGREGAR_CURSO(
-    @usuario bigint,
     @descripcion varchar(50)
     )
     as
     INSERT INTO tb_cursos (descripcion) VALUES (@descripcion)
 go
 create procedure SP_ACTUALIZA_CURSO(
-    @usuario bigint,
     @id int,
     @descripcion varchar(50)
     )
@@ -373,7 +366,6 @@ create procedure SP_ACTUALIZA_CURSO(
     UPDATE tb_cursos SET descripcion=@descripcion WHERE id=@id
 go
 create procedure SP_ELIMINA_CURSO(
-    @usuario bigint,
     @id int
     )
     as
@@ -381,9 +373,7 @@ create procedure SP_ELIMINA_CURSO(
 go
 
 --secciones
-create procedure SP_LISTAR_SECCIONES(
-    @usuario bigint
-    )
+create procedure SP_LISTAR_SECCIONES
     as
     SELECT 
     sc.id,sc.descripcion,sc.estado,
@@ -394,14 +384,12 @@ create procedure SP_LISTAR_SECCIONES(
     FROM tb_seccion sc
 go
 create procedure SP_AGREGAR_SECCION(
-    @usuario bigint,
     @descriprion varchar(20)
     )
     as
     INSERT INTO tb_seccion (descripcion) VALUES (@descriprion)
 go
 create procedure SP_ACTUALIZA_SECCION(
-    @usuario bigint,
     @id int,
     @descriprion varchar(20)
     )
@@ -409,7 +397,6 @@ create procedure SP_ACTUALIZA_SECCION(
     UPDATE tb_seccion SET descripcion=@descriprion WHERE id=@id
 go
 create procedure SP_ELIMINA_SECCION(
-    @usuario bigint,
     @id int
     )
     as
@@ -417,9 +404,7 @@ create procedure SP_ELIMINA_SECCION(
 go
 
 --grados
-create procedure SP_LISTAR_GRADOS(
-    @usuario bigint
-    )
+create procedure SP_LISTAR_GRADOS
     as
     SELECT gr.id,gr.descripcion,gr.estado,
     case
@@ -429,7 +414,6 @@ create procedure SP_LISTAR_GRADOS(
     FROM tb_grado gr
 go
 create procedure SP_AGREGAR_GRADO(
-    @usuario bigint,
     @descriprion varchar(20),
     @sigla varchar(8)
     )
@@ -437,7 +421,6 @@ create procedure SP_AGREGAR_GRADO(
     INSERT INTO tb_grado (descripcion,sigla) VALUES (@descriprion,@sigla)
 go
 create procedure SP_ACTUALIZA_GRADO(
-    @usuario bigint,
     @id int,
     @descriprion varchar(20) 
     )
@@ -445,7 +428,6 @@ create procedure SP_ACTUALIZA_GRADO(
     UPDATE tb_grado SET descripcion=@descriprion WHERE id=@id
 go
 create procedure SP_ELIMINA_GRADO(
-    @usuario bigint,
     @id int 
     )
     as
@@ -453,9 +435,7 @@ create procedure SP_ELIMINA_GRADO(
 go
 
 --ciclos academicos
-create procedure SP_LISTAR_CLICLO_ACACEMICO(
-    @usuario bigint 
-    )
+create procedure SP_LISTAR_CLICLO_ACACEMICO
     as
     SELECT  
     cl.id,cl.nombre,CONVERT(VARCHAR,cl.fecha_ini,121),CONVERT(VARCHAR,cl.fech_fin,121),
@@ -466,7 +446,6 @@ create procedure SP_LISTAR_CLICLO_ACACEMICO(
     FROM tb_cliclo_academico cl
 go
 create procedure SP_AGREGAR_CLICLO_ACADEMICO(
-    @usuario bigint,
     @nombre	varchar(50),
     @fecha_ini	varchar(10),
     @fech_fin	varchar(10)
@@ -475,7 +454,6 @@ create procedure SP_AGREGAR_CLICLO_ACADEMICO(
     INSERT INTO tb_cliclo_academico (nombre,fecha_ini,fech_fin) VALUES (@nombre,@fecha_ini,@fech_fin)
 go
 create procedure SP_ACTUALIZA_CLICLO_ACADEMICO(
-    @usuario bigint,
     @id int,
     @nombre	varchar(50),
     @fecha_ini	varchar(10),
@@ -485,16 +463,75 @@ create procedure SP_ACTUALIZA_CLICLO_ACADEMICO(
     UPDATE tb_cliclo_academico SET nombre=@nombre,fecha_ini=@fecha_ini,fech_fin=@fech_fin WHERE id=@id
 go
 create procedure SP_ELIMINA_CICLO_ACADEMICO(
-        @usuario bigint,
         @id int
     )
     as
     UPDATE tb_cliclo_academico SET estado=0 WHERE id=@id
 go
 
+--plantillas permisos
+create procedure SP_LISTAR_PLANTILLA_PERMISO(
+    @cargo int
+    )
+    as
+    SELECT plt.id_permiso,pr.descripcion FROM tb_pantilla_cargo_permiso plt INNER JOIN tb_permisos pr ON pr.id=plt.id_permiso WHERE plt.id_cargo=@cargo
+go
+create procedure SP_INSERTA_PERMISO_CARGO_PLANTILLA(
+    @cargo int,
+    @permiso int
+    )
+    as
+    DECLARE
+    @exist int
+    SELECT @exist=count(*) FROM tb_pantilla_cargo_permiso WHERE id_cargo=@cargo AND id_permiso=@permiso
+    IF @exist=0
+    INSERT INTO tb_pantilla_cargo_permiso (id_cargo,id_permiso) VALUES (@cargo,@permiso)
+go
+create procedure SP_ELIMINA_PERMISO_CARGO_PLANTILLA(
+    @cargo int,
+    @permiso int
+    )
+    as
+    DELETE FROM tb_pantilla_cargo_permiso WHERE id_cargo=@cargo AND id_permiso=@permiso
+go
+
+--detalles
+create procedure SP_LISTAR_DETALLES
+    as
+    SELECT dtll.id,cr.descripcion as 'cargo',dtll.placeholder  FROM tb_detalles dtll INNER JOIN tb_cargo cr ON cr.id=dtll.id_cargo
+go
+create procedure SP_AGREGAR_DETALLE(
+    @cargo int,
+    @descripcion varchar(100),
+    @placeholder varchar(100)
+    )
+    as
+    INSERT INTO tb_detalles (descripcion,placeholder,id_cargo)VALUES(@descripcion,@placeholder,@cargo)
+go
+create procedure SP_BUSCAR_DETALLE(
+    @id int
+    )
+    as
+    SELECT dtll.id,dtll.id_cargo,dtll.placeholder FROM tb_detalles dtll WHERE dtll.id=@id
+go
+create procedure SP_ACTUALIZA_CARGO_DETALLE(
+    @id int,
+    @cargo int,
+    @descripcion varchar(100),
+    @placeholder varchar(100)   
+    )
+    as
+    UPDATE tb_detalles SET id_cargo=@cargo,descripcion=@descripcion,placeholder=@placeholder WHERE id=@id
+go
+create procedure SP_ELIMINA_DETALLE(
+    @id int
+    )
+    as
+    UPDATE tb_detalles set estado=0 WHERE id=@id
+go
+
 --usuarios
 create procedure SP_AGREGAR_USUARIO(
-    @usuario bigint,
     @nombre	varchar(100),
     @apellidos	varchar(200),
     @tipo_doc	int,
@@ -505,7 +542,7 @@ create procedure SP_AGREGAR_USUARIO(
     as
     INSERT INTO tb_usuario (nombre,apellidos,tipo_doc,num_doc,usuario,pass) VALUES (@nombre,@apellidos,@tipo_doc,@num_doc,@user,@pass)
 go
-create procedure SP_BUSCA_INTERNO_USUARIO(
+create procedure SP_BUSCA_INTERNO_ID_USUARIO(
     @num_doc varchar(25)    
     )
     as
@@ -542,4 +579,93 @@ create procedure SP_AUTO_AGREGA_PERMISO_USUARIO(
     as
     INSERT INTO tb_permiso_usuario
     SELECT @id as 'id_usuario',plt.id_permiso as 'id_permiso' FROM tb_pantilla_cargo_permiso plt WHERE plt.id_cargo=@cargo
+go
+create procedure SP_AUTO_ELMINA_PERMISO_USUARIO(
+    @id bigint,
+    @cargo int  
+    )
+    as
+    DELETE FROM tb_permiso_usuario 
+    WHERE id_permiso IN (SELECT * FROM tb_pantilla_cargo_permiso plt WHERE plt.id_cargo=@id)
+    AND id_usuario=@id 
+go
+create procedure SP_LISTAR_USUARIOS(
+    @usuario bigint,
+    @cargo int
+    )
+    as
+    SELECT * FROM tb_cargo_usuario crUs INNER JOIN tb_usuario us ON crUs.id_usuario=us.id WHERE crUs.id_cargo=@cargo 
+go
+create procedure SP_BUSCAR_USUARIO(
+    @id bigint
+    )
+    as
+    SELECT us.id,us.nombre,us.apellidos,tpoDoc.descripcion as 'documento',us.num_doc as 'numDoc' 
+    FROM tb_usuario us INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc WHERE us.id=@id
+go
+create procedure SP_BUSCA_DETALLE_USUARIO(
+    @id bigint
+    )
+    as
+    SELECT dtll.id,dtll.descripcion,dtllUs.valor FROM tb_usuario_detalle dtllUs INNER JOIN tb_detalles dtll ON dtll.id=dtllUs.id_detalle WHERE dtllUs.id_usuario=@id
+go
+create procedure SP_AGREGAR_DETALLE_USUARIO(
+    @id bigint,
+    @detalle int
+    )
+    as
+    DECLARE
+    @exist int
+    SELECT @exist=count(*) FROM tb_usuario_detalle WHERE id_detalle=@detalle AND id_usuario=@id
+    IF @exist=0
+    INSERT INTO tb_usuario_detalle (id_detalle,id_usuario) VALUES (@detalle,@id)
+go
+create procedure SP_ELIMINA_DETALLE_USUARIO(
+    @id bigint,
+    @detalle int 
+    )
+    as
+    DELETE FROM tb_usuario_detalle WHERE id_usuario=@id AND id_detalle=@detalle
+go
+create procedure SP_LISTA_PERMISOS_USUARIO(
+    @id bigint
+    )
+    as
+    SELECT pr.id,pr.descripcion,pr.icono FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr on prUs.id_permiso=pr.id WHERE prUs.id_usuario=@id
+go
+create procedure SP_AGREGA_PERMISO_USUARIO(
+    @id bigint,
+    @permiso int
+    )
+    as
+    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario)VALUES(@permiso,@id)
+go
+create procedure SP_ELIMINA_PERMISO_USUARIO(
+    @id bigint,
+    @permiso int   
+    )
+    as
+    DELETE FROM tb_permiso_usuario WHERE id_usuario=@id AND id_permiso=@permiso
+go
+
+--apoderado-alumno
+create procedure SP_LISTA_MIS_HIJOS(
+    @id bigint
+    )
+    as
+    SELECT us.id,us.nombre,us.apellidos FROM tb_apoderado_alumno alms INNER JOIN tb_usuario us ON alms.id_alumno=us.id WHERE id_apoderado=@id
+go
+create procedure SP_AGREGA_HIJO_APODERADO(
+    @hijo bigint,
+    @padre bigint
+    )
+    as
+    INSERT INTO tb_apoderado_alumno (id_apoderado,id_alumno) VALUES (@padre,@hijo)
+go
+create procedure SP_ELIMINA_HIJO_APODERADO(
+    @hijo bigint,
+    @padre bigint
+    )
+    as
+    DELETE FROM tb_apoderado_alumno WHERE id_alumno=@hijo AND id_apoderado=@padre
 go
