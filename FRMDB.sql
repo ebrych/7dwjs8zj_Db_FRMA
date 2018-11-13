@@ -183,26 +183,23 @@ begin
     INSERT INTO tb_tipo_documento (descripcion) VALUES ('Carnet de extrangeria')
     SELECT * FROM tb_tipo_documento
 
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Personal','Registro de personal','ccc','Registro-personal')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Inscripciones','Registro de alumnos','ccc','Registro-alumnos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Inscripciones','Registro de alumnos','ccc','Registro-alumnos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','ccc','Permisos')--asigna permisos/usuario
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cargos','Gestión de cargos','ccc','Cargos') --aqui se asigna plantilla permiso/cargo (cuando se ingrese el usuario se toma e inserta todos los permisos...despues puede añadir o quitar desde usuario_permiso)
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','ccc','Permisos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión de mallas curriculares','ccc','Malla-curricular')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Matriculas','Gestión de matriculas','ccc','Matriculas')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grados','Gestión de grados y niveles','ccc','Niveles')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Secciones','Gestión de secciones','ccc','Secciones')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos','Gestión de cursos','ccc','Cursos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Especificaciones','Gestión de especificaciones de calificacion','ccc','Especificaciones')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grupos','Agrupación de Especificaciones','ccc','Grupos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Asignacion de cursos','Gestión de cursos a docentes','ccc','Asigna-Curso')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Academico','Gestión de datos academicos','ccc','Academico') --ingreso de notas a tabla detalle_matricula_curso
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Personal','Registro de personal','fas fa-users','Personal')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Inscripciones','Registro de alumnos','fas fa-user-graduate','Alumnos')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Detalles de Usuarios','Gestión de datos de usuarios','fas fa-info-circle','Detalles') 
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','fas fa-lock','Permisos')--asigna permisos/usuario
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cargos','Gestión de cargos','fas fa-id-card-alt','Cargos') --aqui se asigna plantilla permiso/cargo (cuando se ingrese el usuario se toma e inserta todos los permisos...despues puede añadir o quitar desde usuario_permiso)
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión de mallas curriculares','fas fa-layer-group','MallaCurricular')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Matriculas','Gestión de matriculas','fas fa-tasks','Matriculas')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grados','Gestión de grados y niveles','fas fa-ellipsis-v','Niveles')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Secciones','Gestión de secciones','fas fa-grip-horizontal','Secciones')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos','Gestión de cursos','fas fa-book','Cursos')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Especificaciones','Gestión de especificaciones de calificacion','fas fa-clipboard-check','Especificaciones')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grupos','Agrupación de Especificaciones','far fa-object-group','Grupos')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Asignacion de cursos','Gestión de cursos a docentes','fas fa-chalkboard-teacher','AsignaCurso')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Academico','Gestión de datos academicos','fas fa-highlighter','Academico') --ingreso de notas a tabla detalle_matricula_curso
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Apoderados','Gestión de Apoderados','fab fa-black-tie','Apoderados')
     SELECT * FROM tb_permisos
 
-    INSERT INTO tb_cargo (descripcion) VALUES ('Ninguno')
-    INSERT INTO tb_cargo (descripcion) VALUES ('Root')
-    SELECT * FROM tb_cargo
 
     INSERT INTO tb_usuario (nombre,apellidos,tipo_doc,num_doc,usuario,pass) VALUES ('Eber David','Baldarrago',1,'43744482','Root','123')
     SELECT * FROM tb_usuario
@@ -221,10 +218,13 @@ begin
     INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (12,1)	
     INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (13,1)	
     INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (14,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (15,1)
 
             
     --===========================DATOS DEMO
+	INSERT INTO tb_cargo (descripcion) VALUES ('Ninguno')
+    INSERT INTO tb_cargo (descripcion) VALUES ('Root')
+    SELECT * FROM tb_cargo
+
     INSERT INTO tb_grado (descripcion,sigla) VALUES ('Inicial','INI')
     INSERT INTO tb_grado (descripcion,sigla) VALUES ('Primero de primaria','1º PRIM')
     INSERT INTO tb_grado (descripcion,sigla) VALUES ('Segundo de primaria','2º PRIM')
@@ -269,6 +269,7 @@ create procedure SP_LOGIN
     UPDATE tb_usuario set token=@token WHERE usuario=@user AND pass=@pass
     SELECT TOP(1) us.id,us.nombre,us.apellidos,@token FROM tb_usuario us WHERE us.usuario=@user AND us.pass=@pass
 go
+exec SP_LOGIN 'Root','123'
 
 create procedure SP_LOGOUT
     (
@@ -277,6 +278,7 @@ create procedure SP_LOGOUT
     as
     UPDATE tb_usuario set token=null WHERE id=@id
 go
+exec SP_LOGOUT 1
 
 create procedure SP_MIS_PERMISOS
     (
@@ -287,6 +289,7 @@ create procedure SP_MIS_PERMISOS
     pr.titulo,pr.descripcion,pr.icono,pr.controlador 
     FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr on prUs.id_permiso=pr.id WHERE prUs.id_usuario=@id
 go
+exec SP_MIS_PERMISOS 1
 
 create procedure SP_CONTROL_PERMISOS(
     @id bigint,
@@ -295,7 +298,7 @@ create procedure SP_CONTROL_PERMISOS(
     as
     SELECT count(*) FROM tb_permiso_usuario WHERE id_usuario=@id AND id_permiso=@permiso
 go
-
+exec SP_CONTROL_PERMISOS 1,1
 create procedure SP_CONTROL_TOKENS(
     @id bigint,
     @token varchar(10)
@@ -333,7 +336,7 @@ create procedure SP_ACTUALIZA_CARGO(
     as
     UPDATE tb_cargo SET descripcion=@descripcion WHERE id=@id
     go
-    create procedure SP_ELIMINA_CARGO(
+create procedure SP_ELIMINA_CARGO(
     @usuario bigint,
     @id int
     )
@@ -508,11 +511,22 @@ create procedure SP_AGREGAR_DETALLE(
     as
     INSERT INTO tb_detalles (descripcion,placeholder,id_cargo)VALUES(@descripcion,@placeholder,@cargo)
 go
-create procedure SP_BUSCAR_DETALLE(
-    @id int
+create procedure SP_LISTAR_DETALLE_USUARIO(
+@id bigint
+)
+as
+SELECT dt.id,dt.descripcion,dtlls.valor FROM tb_usuario_detalle dtlls INNER JOIN tb_detalles dt ON dt.id=dtlls.id_detalle WHERE dtlls.id_usuario=@id
+go
+create procedure SP_AGREGAR_DETALLE_USUARIO(
+    @id bigint,
+    @detalle int
     )
     as
-    SELECT dtll.id,dtll.id_cargo,dtll.placeholder FROM tb_detalles dtll WHERE dtll.id=@id
+    DECLARE
+    @exist int
+    SELECT @exist=count(*) FROM tb_usuario_detalle WHERE id_detalle=@detalle AND id_usuario=@id
+    IF @exist=0
+    INSERT INTO tb_usuario_detalle (id_detalle,id_usuario) VALUES (@detalle,@id)
 go
 create procedure SP_ACTUALIZA_CARGO_DETALLE(
     @id int,
@@ -594,31 +608,17 @@ create procedure SP_LISTAR_USUARIOS(
     @cargo int
     )
     as
-    SELECT * FROM tb_cargo_usuario crUs INNER JOIN tb_usuario us ON crUs.id_usuario=us.id WHERE crUs.id_cargo=@cargo 
+    SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,tpoDoc.descripcion 
+	FROM tb_cargo_usuario crUs 
+	INNER JOIN tb_usuario us ON crUs.id_usuario=us.id 
+	INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc WHERE crUs.id_cargo=@cargo 
 go
 create procedure SP_BUSCAR_USUARIO(
     @id bigint
     )
     as
-    SELECT us.id,us.nombre,us.apellidos,tpoDoc.descripcion as 'documento',us.num_doc as 'numDoc' 
+    SELECT us.id,us.nombre,us.apellidos,us.tipo_doc as 'id_tipo_doc' ,tpoDoc.descripcion as 'documento',us.num_doc as 'numDoc' 
     FROM tb_usuario us INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc WHERE us.id=@id
-go
-create procedure SP_BUSCA_DETALLE_USUARIO(
-    @id bigint
-    )
-    as
-    SELECT dtll.id,dtll.descripcion,dtllUs.valor FROM tb_usuario_detalle dtllUs INNER JOIN tb_detalles dtll ON dtll.id=dtllUs.id_detalle WHERE dtllUs.id_usuario=@id
-go
-create procedure SP_AGREGAR_DETALLE_USUARIO(
-    @id bigint,
-    @detalle int
-    )
-    as
-    DECLARE
-    @exist int
-    SELECT @exist=count(*) FROM tb_usuario_detalle WHERE id_detalle=@detalle AND id_usuario=@id
-    IF @exist=0
-    INSERT INTO tb_usuario_detalle (id_detalle,id_usuario) VALUES (@detalle,@id)
 go
 create procedure SP_ELIMINA_DETALLE_USUARIO(
     @id bigint,
