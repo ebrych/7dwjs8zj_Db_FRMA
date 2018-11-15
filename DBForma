@@ -1,0 +1,269 @@
+--use master
+--drop DATABASE DBFORMA
+create database DBFORMA
+use DBFORMA
+
+--=========================================ESTRUCTURA
+begin
+--a
+create table tb_tipo_documento(
+id	int identity(1,1) not null,
+descripcion	varchar(50) not null
+primary key (id)
+)
+create table tb_grados(
+id	int identity(1,1) not null,
+descripcion	varchar(100) not null,
+sigla 	varchar(10) not null,
+estado	tinyint default 1 not null,
+primary key(id)
+)
+create table tb_secciones(
+id	int identity (1,1) not null,
+descripcion	varchar(50) not null,
+estado	tinyint default  1 not null,
+primary key(id)
+)
+create table tb_cursos(
+id	int identity(1,1) not null,
+descripcion	varchar(50) not null,
+estado	tinyint default 1 not null
+primary key(id)
+)
+create table tb_cliclo_academico(
+id	int identity(1,1) not null,
+nombre	varchar(50) not null,
+fecha_ini	date not null,
+fech_fin	date not null,
+fech_reg	dateTime default SYSDATETIME(),
+estado	tinyint default 1,
+primary key(id)
+)
+create table tb_permisos(
+id	int identity(1,1) not null,
+titulo	varchar(20) not null,
+descripcion	varchar(100) not null,
+icono	varchar(50) not null,
+controlador	varchar(50)not null,
+primary key(id)
+)
+--b
+create table tb_usuarios(
+id	bigint identity(1,1) not null,
+nombre	varchar(100) not null,
+apellidos	varchar(100) not null,
+usr	varchar(20) not null,
+pas	varchar(10) not null,
+tipo_doc	int not null,
+num_doc	varchar(15) not null,
+direccion	varchar(200) null,
+email	varchar(100) null,
+fecha_reg	dateTime default SYSDATETIME() not null,
+estado tinyint default 1,
+primary key(id),
+foreign key(tipo_doc) references tb_tipo_documento(id)
+)
+create table tb_administrativos(
+id_usuario	bigint not null,
+fech_nac	date null,
+puesto	varchar(100) null default 'SD',
+telefono	varchar(12) null default 'SD',
+foreign key(id_usuario) references tb_usuarios(id)
+)
+create table tb_docentes(
+id_usuario	bigint not null,
+fech_nac	date null,
+telefono	varchar(12) null default 'SD',
+foreign key (id_usuario) references tb_usuarios(id)
+)
+create table tb_alumnos(
+id_usuario	bigint not null,
+fech_nac	date null,
+foreign key(id_usuario) references tb_usuarios(id)
+)
+create table tb_apoderado(
+id_usuario	bigint not null,
+trabajo	varchar(100) not null,
+direccion	varchar(100) not null,
+telefono	varchar(12) not null,
+foreign key(id_usuario) references tb_usuarios(id)
+)
+create table tb_apoderado_alumno(
+id_apoderado bigint,
+id_alumno bigint,
+foreign key (id_apoderado) references tb_usuarios(id),
+foreign key (id_alumno) references tb_usuarios(id)
+)
+create table tb_permiso_usuario(
+id_usuario	bigint,
+id_permiso	int,
+foreign key (id_usuario) references tb_usuarios(id),
+foreign key (id_permiso) references tb_permisos(id)
+)	
+--c
+create table tb_grupos(
+id	bigint identity(1,1) not null,
+descripcion	varchar(50) not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+id_docente	bigint not null,
+primary key(id),
+foreign key (id_docente) references tb_usuarios(id)
+)
+create table tb_especificacion(
+id	bigint identity(1,1) not null,
+descripcion	varchar(50) not null,
+id_docente	bigint not null,
+id_grupo	bigint not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+primary key(id),
+foreign key (id_docente) references tb_usuarios(id),
+foreign key (id_grupo) references tb_grupos(id) 
+)
+--d
+create table tb_malla_curricular(
+id_grado int not null,
+id_curso int not null,
+foreign key (id_grado) references tb_grados(id),
+foreign key (id_curso) references tb_cursos(id)
+)
+create table tb_matricula(
+id	bigint identity(1,1),
+id_alumno	bigint not null,
+id_grado	int not null,
+id_seccion	int not null,
+id_ciclo_acdemico	int not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+primary key(id),
+foreign key (id_alumno) references  tb_usuarios(id),
+foreign key (id_grado) references  tb_grados(id),
+foreign key (id_seccion) references  tb_secciones(id),
+foreign key (id_ciclo_acdemico) references  tb_cliclo_academico(id)
+)
+create table tb_matricula_cursos(
+id	bigint identity(1,1) not null,
+id_matricula	bigint not null,
+id_cursos	int not null,
+nota_final	decimal null,
+primary key (id),
+foreign key (id_matricula) references tb_matricula(id),
+foreign key (id_cursos) references tb_cursos(id),
+)
+create table tb_detalle_matricula_curso(
+id_mat_cur	bigint not null,
+nota	decimal not null,
+porcentaje	int not null,
+id_espec	bigint not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+foreign key (id_mat_cur) references tb_matricula_cursos(id),
+foreign key (id_espec) references tb_especificacion(id)
+)
+--e
+create table tb_pantilla_cargo_rol(
+id	int identity(1,1) not null,
+descripcion varchar(50) not null,
+id_permiso	int not null
+)
+end
+--=========================================DATA INIT
+begin
+	INSERT INTO tb_tipo_documento (descripcion) VALUES ('DNI')
+	INSERT INTO tb_tipo_documento (descripcion) VALUES ('Pasaporte')
+	INSERT INTO tb_tipo_documento (descripcion) VALUES ('Carnet de extrangeria')
+	SELECT * FROM tb_tipo_documento
+
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Administrativos','Gestión de administrativos','fas fa-users','Administrativo')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Inscripciones','Gestión de alumnos','fas fa-user-graduate','Alumno')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Docentes','Gestión de docentes','fas fa-chalkboard-teacher','Docente')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Apoderados','Gestión de apoderados','fab fa-black-tie','Apoderado')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','fas fa-lock','Permiso') --administra permisos de usuario
+	SELECT * FROM tb_permisos
+	
+	INSERT INTO tb_usuarios (nombre,apellidos,tipo_doc,num_doc,direccion,usr,pas) VALUES ('Eber David','Baldarrago',1,'43744482','Av. qwerty 123','root','123')
+	SELECT * FROM tb_usuarios
+
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (1,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (2,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (3,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (4,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (5,1)
+	SELECT * FROM tb_permiso_usuario
+
+end
+
+--=========================================PROCEDURES
+create procedure SP_LOGIN(
+@user varchar(20),
+@pass varchar(10)
+)
+as
+SELECT us.id,us.nombre,us.apellidos
+FROM tb_usuarios us WHERE us.usr=@user AND us.pas=@pass AND estado=1
+go
+exec SP_LOGIN 'root','123'
+
+create procedure SP_LISTA_PERMISOS_BY_USER(
+@id bigint
+)
+as
+SELECT pr.titulo,pr.descripcion,pr.icono,pr.controlador 
+FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr ON pr.id=prUs.id_permiso 
+WHERE prUs.id_usuario=@id
+go
+exec SP_LISTA_PERMISOS_BY_USER 1
+
+create procedure SP_CONTROL_PERMISOS(
+@id bigint,
+@permiso int
+)
+as
+SELECT count(*) FROM tb_permiso_usuario pr INNER JOIN tb_usuarios us ON us.id=pr.id_usuario  WHERE id_usuario=@id AND id_permiso=@permiso AND us.estado=1
+go
+exec SP_CONTROL_PERMISOS 1,1
+
+create procedure SP_LISTAR_TIPO_DOCUMENTO
+as
+SELECT id,descripcion FROM tb_tipo_documento 
+go
+exec SP_LISTAR_TIPO_DOCUMENTO
+
+create procedure SP_LISTAR_ADMINISTRATIVOS
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,
+adm.puesto,adm.telefono,
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_administrativos adm INNER JOIN tb_usuarios us ON us.id=adm.id_usuario 
+go
+exec SP_LISTAR_ADMINISTRATIVOS
+
+create procedure SP_BUSCA_ADMINISTRATIVO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,
+tpoDoc.descripcion,us.num_doc,us.direccion,us.email,
+CONVERT(varchar,adm.fech_nac,121),adm.puesto,adm.telefono,us.estado as 'idEstado',
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado' 
+FROM tb_administrativos adm 
+INNER JOIN tb_usuarios us ON us.id=adm.id_usuario
+INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc 
+WHERE adm.id_usuario=@id
+go
+exec SP_BUSCA_ADMINISTRATIVO 1
+
+create procedure SP_AGREGA_USUARIO(
+@nombre	varchar(100)
+@apellidos	varchar(100)
+usr	varchar(20)
+pas	varchar(10)
+tipo_doc	int
+num_doc	varchar(15)
+direccion	varchar(200)
+fecha_reg	dateTime
+email	varchar(100)
+)
