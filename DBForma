@@ -159,7 +159,7 @@ foreign key (id_espec) references tb_especificacion(id)
 )
 --e
 create table tb_pantilla_cargo_rol(
-id	int identity(1,1) not null,
+id	int not null,
 descripcion varchar(50) not null,
 id_permiso	int not null
 )
@@ -190,6 +190,10 @@ begin
 
 end
 
+	INSERT INTO tb_pantilla_cargo_rol(id,descripcion,id_permiso) VALUES (1,'Administrativo',2)
+	INSERT INTO tb_pantilla_cargo_rol(id,descripcion,id_permiso) VALUES (1,'Administrativo',3)
+
+
 --=========================================PROCEDURES
 create procedure SP_LOGIN(
 @user varchar(20),
@@ -197,7 +201,7 @@ create procedure SP_LOGIN(
 )
 as
 SELECT us.id,us.nombre,us.apellidos
-FROM tb_usuarios us WHERE us.usr=@user AND us.pas=@pass AND estado=1
+FROM tb_usuarios us WHERE us.usr=@user OR us.num_doc=@user AND us.pas=@pass AND estado=1
 go
 exec SP_LOGIN 'root','123'
 
@@ -208,6 +212,13 @@ as
 SELECT pr.titulo,pr.descripcion,pr.icono,pr.controlador 
 FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr ON pr.id=prUs.id_permiso 
 WHERE prUs.id_usuario=@id
+go
+
+create procedure SP_LISTA_PERMISOS_BY_USER(
+@id bigint
+)
+as
+SELECT pr.titulo,pr.descripcion,pr.icono,pr.controlador FROM tb_permiso_usuario prU INNER JOIN tb_permisos pr ON pr.id=prU.id_permiso WHERE prU.id_usuario=@id
 go
 exec SP_LISTA_PERMISOS_BY_USER 1
 
@@ -256,14 +267,81 @@ WHERE adm.id_usuario=@id
 go
 exec SP_BUSCA_ADMINISTRATIVO 1
 
+--usuario
 create procedure SP_AGREGA_USUARIO(
-@nombre	varchar(100)
-@apellidos	varchar(100)
-usr	varchar(20)
-pas	varchar(10)
-tipo_doc	int
-num_doc	varchar(15)
-direccion	varchar(200)
-fecha_reg	dateTime
-email	varchar(100)
+@nombre	varchar(100),
+@apellidos	varchar(100),
+@usr	varchar(20),
+@tipo_doc	int,
+@num_doc	varchar(15),
+@direccion	varchar(200),
+@email	varchar(100)
 )
+as
+DECLARE
+@fecha datetime = SYSDATETIME(),
+@psw varchar(6) = SUBSTRING(CONVERT(varchar(255), NEWID()),1, 6)
+INSERT INTO tb_usuarios (nombre,apellidos,usr,pas,tipo_doc,num_doc,direccion,email,fecha_reg)
+VALUES (@nombre,@apellidos,@usr,@psw,@tipo_doc,@num_doc,@direccion,@email,@fecha)
+SELECT id FROM tb_usuarios WHERE num_doc=@num_doc AND fecha_reg=@fecha
+go
+create procedure SP_ACTUALIZA_USUARIO(
+@id bigint,
+@nombre	varchar(100),
+@apellidos	varchar(100),
+@usr	varchar(20),
+@pas varchar(20),
+@tipo_doc	int,
+@num_doc	varchar(15),
+@direccion	varchar(200),
+@email	varchar(100)
+)
+as
+if @pas=''
+	begin
+	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
+	usr=@usr,pas=@pas,tipo_doc=@tipo_doc,num_doc=@num_doc,
+	direccion=@direccion,email=@email
+	WHERE id=@id
+	end
+else
+	begin
+	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
+	usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
+	direccion=@direccion,email=@email
+	WHERE id=@id
+	end
+go
+--fin usuario
+
+
+--administrativos
+create procedure SP_AGREGAR_DETALLE_ADMINISTRATIVO(
+@id_usuario	bigint,
+@fech_nac	date,
+@puesto	varchar(100),
+@telefono	varchar(12)
+)
+as
+INSERT INTO tb_administrativos (id_usuario,fech_nac,puesto,telefono) 
+VALUES (@id_usuario,@fech_nac,@puesto,@telefono)
+go
+create procedure SP_ACTUALIZA_DETALLE_ADMINISTRATIVO(
+@id_usuario	bigint,
+@fech_nac	date,
+@puesto	varchar(100),
+@telefono	varchar(12)
+)
+as
+UPDATE tb_administrativos SET fech_nac=@fech_nac,puesto=@puesto,telefono=@telefono WHERE id_usuario=id_usuario
+go
+
+create procedure SP_AGREGA_PERMISOS_ADMINISTRATIVO(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=1
+go
+
+
