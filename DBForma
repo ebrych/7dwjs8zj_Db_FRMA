@@ -190,6 +190,7 @@ begin
 
 end
 
+	--data demo de asignacion
 	INSERT INTO tb_pantilla_cargo_rol(id,descripcion,id_permiso) VALUES (1,'Administrativo',2)
 	INSERT INTO tb_pantilla_cargo_rol(id,descripcion,id_permiso) VALUES (1,'Administrativo',3)
 
@@ -201,9 +202,11 @@ create procedure SP_LOGIN(
 )
 as
 SELECT us.id,us.nombre,us.apellidos
-FROM tb_usuarios us WHERE us.usr=@user OR us.num_doc=@user AND us.pas=@pass AND estado=1
+FROM tb_usuarios us WHERE (us.usr=@user OR us.num_doc=@user) AND (us.pas=@pass) AND estado=1
 go
+drop procedure SP_LOGIN
 exec SP_LOGIN 'root','123'
+select * from tb_usuarios
 
 create procedure SP_LISTA_PERMISOS_BY_USER(
 @id bigint
@@ -237,35 +240,6 @@ SELECT id,descripcion FROM tb_tipo_documento
 go
 exec SP_LISTAR_TIPO_DOCUMENTO
 
-create procedure SP_LISTAR_ADMINISTRATIVOS
-as
-SELECT us.id,us.nombre,us.apellidos,us.email,
-adm.puesto,adm.telefono,
-case
-	when us.estado=1 then 'Activo'
-	when us.estado=0 then 'Inactivo'
-end as 'estado'
-FROM tb_administrativos adm INNER JOIN tb_usuarios us ON us.id=adm.id_usuario 
-go
-exec SP_LISTAR_ADMINISTRATIVOS
-
-create procedure SP_BUSCA_ADMINISTRATIVO(
-@id bigint
-)
-as
-SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,
-tpoDoc.descripcion,us.num_doc,us.direccion,us.email,
-CONVERT(varchar,adm.fech_nac,121),adm.puesto,adm.telefono,us.estado as 'idEstado',
-case
-	when us.estado=1 then 'Activo'
-	when us.estado=0 then 'Inactivo'
-end as 'estado' 
-FROM tb_administrativos adm 
-INNER JOIN tb_usuarios us ON us.id=adm.id_usuario
-INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc 
-WHERE adm.id_usuario=@id
-go
-exec SP_BUSCA_ADMINISTRATIVO 1
 
 --usuario
 create procedure SP_AGREGA_USUARIO(
@@ -297,19 +271,46 @@ create procedure SP_ACTUALIZA_USUARIO(
 @email	varchar(100)
 )
 as
-if @pas=''
+DECLARE
+@mismoNombre int,
+@nBusca varchar(20),
+@coincidenciaUsrName int
+SELECT @coincidenciaUsrName=count(*) FROM tb_usuarios
+SELECT @nBusca=usr FROM tb_usuarios WHERE id=@id
+
+if @nBusca=@usr AND @pas=''
 	begin
 	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
-	usr=@usr,pas=@pas,tipo_doc=@tipo_doc,num_doc=@num_doc,
+	tipo_doc=@tipo_doc,num_doc=@num_doc,
 	direccion=@direccion,email=@email
 	WHERE id=@id
 	end
-else
+else if @nBusca=@usr AND @pas!=''
 	begin
-	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
-	usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
+	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,pas=@pas,
+	tipo_doc=@tipo_doc,num_doc=@num_doc,
 	direccion=@direccion,email=@email
 	WHERE id=@id
+	end
+else if @nBusca!=@usr AND @pas=''
+	begin
+	if(@coincidenciaUsrName=0)
+		begin
+		UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
+		usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
+		direccion=@direccion,email=@email
+		WHERE id=@id
+		end
+	end
+else if @nBusca!=@usr AND @pas!=''
+	begin
+	if(@coincidenciaUsrName=0)
+		begin
+		UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,pas=@pas,
+		usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
+		direccion=@direccion,email=@email
+		WHERE id=@id
+		end
 	end
 go
 --fin usuario
@@ -335,7 +336,6 @@ create procedure SP_ACTUALIZA_DETALLE_ADMINISTRATIVO(
 as
 UPDATE tb_administrativos SET fech_nac=@fech_nac,puesto=@puesto,telefono=@telefono WHERE id_usuario=id_usuario
 go
-
 create procedure SP_AGREGA_PERMISOS_ADMINISTRATIVO(
 @id bigint
 )
@@ -343,5 +343,26 @@ as
 INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
 SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=1
 go
+create procedure SP_LISTAR_ADMINISTRATIVOS
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,
+adm.puesto,adm.telefono,
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_administrativos adm INNER JOIN tb_usuarios us ON us.id=adm.id_usuario 
+go
 
+--docentes
+create procedure SP_LISTAR_DOCENTES
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,
+dc.telefono,CONVERT(varchar,dc.fech_nac,121),
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_docentes dc INNER JOIN tb_usuarios us ON us.id=dc.id_usuario
+go
 
