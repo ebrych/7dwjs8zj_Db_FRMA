@@ -350,7 +350,7 @@ adm.puesto,adm.telefono,
 case
 	when us.estado=1 then 'Activo'
 	when us.estado=0 then 'Inactivo'
-end as 'estado'
+end as 'estado',us.usr
 FROM tb_administrativos adm INNER JOIN tb_usuarios us ON us.id=adm.id_usuario 
 go
 
@@ -358,11 +358,59 @@ go
 create procedure SP_LISTAR_DOCENTES
 as
 SELECT us.id,us.nombre,us.apellidos,us.email,
-dc.telefono,CONVERT(varchar,dc.fech_nac,121),
+dc.telefono,CONVERT(varchar,dc.fech_nac,121) as 'fecha_nac',
 case
 	when us.estado=1 then 'Activo'
 	when us.estado=0 then 'Inactivo'
-end as 'estado'
+end as 'estado',us.usr
 FROM tb_docentes dc INNER JOIN tb_usuarios us ON us.id=dc.id_usuario
 go
 
+create procedure SP_AGREGA_DETALLE_DOCENTE
+(
+@id_usuario	bigint,
+@fech_nac	date,
+@telefono	varchar(12)
+)
+as
+INSERT INTO tb_docentes (id_usuario,fech_nac,telefono) VALUES (@id_usuario,@fech_nac,@telefono)
+go
+create procedure SP_BUSCA_DOCNETE(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,tpoDoc.descripcion,us.num_doc,us.direccion,
+us.email,us.estado,us.usr,dc.fech_nac,dc.telefono 
+FROM tb_docentes dc 
+INNER JOIN tb_usuarios us ON us.id=dc.id_usuario
+INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc 
+WHERE dc.id_usuario=@id
+go
+create procedure SP_ACTUALIZA_DETALLE_DOCENTE(
+    @id_usuario bigint,
+    @fecha_nac date,
+    @telefono varchar(12)
+)
+as
+UPDATE tb_docentes SET fech_nac=@fecha_nac,telefono=@telefono WHERE id_usuario=@id_usuario
+go
+create procedure SP_AGREGA_PERMISOS_DOCENTE(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=2
+go
+--alumnos
+create procedure SP_LISTAR_ALUMNOS
+as
+SELECT us.id,us.nombre,us.apellidos,us.email, FROM tb_alumnos al 
+INNER JOIN tb_usuarios us ON al.id_usuario=us.id
+go
+create procedure SP_AGREGAR_DETALLE_ALUMNO(
+@id_usuario bigint,
+@fech_nac date
+)
+as
+UPDATE tb_alumnos SET id_usuario=@id_usuario
+go
