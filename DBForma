@@ -176,6 +176,9 @@ begin
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Docentes','Gestión de docentes','fas fa-chalkboard-teacher','Docente')
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Apoderados','Gestión de apoderados','fab fa-black-tie','Apoderado')
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','fas fa-lock','Permiso') --administra permisos de usuario
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos','Gestión de cursos','fas fa-book','Cursos')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión de mallas curriculares','fas fa-layer-group','MallaCurricular')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grados','Gestión de grados y niveles','fas fa-ellipsis-v','Niveles')
 	SELECT * FROM tb_permisos
 	
 	INSERT INTO tb_usuarios (nombre,apellidos,tipo_doc,num_doc,direccion,usr,pas) VALUES ('Eber David','Baldarrago',1,'43744482','Av. qwerty 123','root','123')
@@ -186,6 +189,9 @@ begin
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (3,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (4,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (5,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (6,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (7,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (8,1)
 	SELECT * FROM tb_permiso_usuario
 
 end
@@ -268,7 +274,8 @@ create procedure SP_ACTUALIZA_USUARIO(
 @tipo_doc	int,
 @num_doc	varchar(15),
 @direccion	varchar(200),
-@email	varchar(100)
+@email	varchar(100),
+@estado tinyint
 )
 as
 DECLARE
@@ -282,14 +289,14 @@ if @nBusca=@usr AND @pas=''
 	begin
 	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
 	tipo_doc=@tipo_doc,num_doc=@num_doc,
-	direccion=@direccion,email=@email
+	direccion=@direccion,email=@email,estado=@estado
 	WHERE id=@id
 	end
 else if @nBusca=@usr AND @pas!=''
 	begin
 	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,pas=@pas,
 	tipo_doc=@tipo_doc,num_doc=@num_doc,
-	direccion=@direccion,email=@email
+	direccion=@direccion,email=@email,estado=@estado
 	WHERE id=@id
 	end
 else if @nBusca!=@usr AND @pas=''
@@ -298,7 +305,7 @@ else if @nBusca!=@usr AND @pas=''
 		begin
 		UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
 		usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
-		direccion=@direccion,email=@email
+		direccion=@direccion,email=@email,estado=@estado
 		WHERE id=@id
 		end
 	end
@@ -308,15 +315,30 @@ else if @nBusca!=@usr AND @pas!=''
 		begin
 		UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,pas=@pas,
 		usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
-		direccion=@direccion,email=@email
+		direccion=@direccion,email=@email,estado=@estado
 		WHERE id=@id
 		end
 	end
 go
+create procedure SP_LIST_OPTIONS_USUARIO
+as
+SELECT us.id,us.nombre,tpo.descripcion,us.num_doc 
+FROM tb_usuarios us
+INNER JOIN tb_tipo_documento tpo ON us.tipo_doc=tpo.id
+WHERE us.estado = 1  
+go
+create procedure SP_BUSCA_USUARIO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,tpoDc.descripcion,us.num_doc,us.email,us.direccion FROM tb_usuarios us 
+INNER JOIN tb_tipo_documento tpoDc ON tpoDc.id=us.tipo_doc 
+WHERE us.id=@id
+go
 --fin usuario
 
 
---administrativos 1
+--administrativos (1)
 create procedure SP_AGREGAR_DETALLE_ADMINISTRATIVO(
 @id_usuario	bigint,
 @fech_nac	date,
@@ -370,7 +392,7 @@ INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc
 WHERE adm.id_usuario=@id
 go
 
---docentes 2
+--docentes (2)
 create procedure SP_AGREGAR_DETALLE_DOCENTE(
 @id_usuario	bigint,
 @fech_nac	date,
@@ -396,8 +418,8 @@ as
 SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,tpoDoc.descripcion,
 us.num_doc,us.direccion,us.email,CONVERT(varchar,dc.fech_nac,121),dc.telefono,us.estado as 'idEdtado',
 case
-	when us.id=1 then 'Activo'
-	when us.id=0 then 'Inactivo'
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
 end as 'estado',us.usr 
 FROM tb_docentes dc 
 INNER JOIN tb_usuarios us ON us.id=dc.id_usuario
@@ -420,7 +442,7 @@ INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
 SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=2
 go
 
---alumno 3
+--alumno (3)
 create procedure SP_AGREGA_DETALLE_ALUMNO(
 @id_usuario bigint,
 @fech_nac date
@@ -430,7 +452,7 @@ INSERT INTO tb_alumnos (id_usuario,fech_nac) VALUES (@id_usuario,@fech_nac)
 go
 create procedure SP_LISTAR_ALUMNOS
 as
-SELECT us.id,us.nombre,us.apellidos,us.email,alm.fech_nac,
+SELECT us.id,us.nombre,us.apellidos,us.email,convert(varchar,alm.fech_nac,121),
 case
 	when us.estado=1 then 'Activo'
 	when us.estado=0 then 'Inactivo'
@@ -460,8 +482,23 @@ create procedure SP_ACTUALIZA_DETALLE_ALUMNO(
 as
 UPDATE tb_alumnos SET id_usuario=@id_usuario, fech_nac=@fech_nac WHERE id_usuario=@id_usuario
 go
+create procedure SP_AGREGAR_PERMISO_ALUMNO(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=3
+go
+create procedure SP_LIST_OPTIONS_ALUMNO
+as
+SELECT us.id,us.nombre,us.apellidos,tpo.descripcion,us.num_doc 
+FROM tb_alumnos al 
+INNER JOIN tb_usuarios us on us.id=al.id_usuario
+INNER JOIN tb_tipo_documento tpo on tpo.id=us.tipo_doc 
+WHERE us.estado!=0
+go
 
---apoderado 4
+--apoderado (4)
 create procedure SP_AGREGAR_APDERADO(
 @id_usuario bigint,
 @trabajo varchar(100),
@@ -478,19 +515,19 @@ us.id,us.nombre,us.apellidos,us.email,apo.telefono,apo.trabajo,apo.direccion as 
 case
 	when us.estado=1 then 'Activo'
 	when us.estado=0 then 'Inactivo'
-end as 'estado' 
+end as 'estado',us.usr 
 FROM tb_apoderado apo INNER JOIN tb_usuarios us ON us.id=apo.id_usuario
 go
 create procedure SP_BUSCAR_APODERADO(
 @id bigint
 )
 as
-SELECT us.id,us.nombre,us.direccion,tipo_doc,tpoDoc.descripcion as 'documentoDesc',us.num_doc,
+SELECT us.id,us.nombre,us.apellidos,us.email,us.direccion,us.tipo_doc,tpoDoc.descripcion as 'documentoDesc',us.num_doc,
 apo.trabajo,apo.telefono,apo.direccion as 'dirTrabajo',us.estado as 'idEstado',
 case
 	when us.estado=1 then 'Activo'
 	when us.estado=0 then 'Inactivo'
-end as 'estado' 
+end as 'estado',us.usr 
 FROM tb_apoderado apo 
 INNER JOIN tb_usuarios us ON us.id=apo.id_usuario
 INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc
@@ -528,8 +565,27 @@ create procedure SP_ELIMINA_ALUMNO_APODERADO(
 as
 DELETE FROM tb_apoderado_alumno WHERE id_alumno=@id_alumno AND id_apoderado=@id_apoderado
 go
+create procedure SP_AGREGAR_PERMISO_APODERADO(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=4
+go
 
 --permisos
+create procedure SP_LIST_OPTIONS_PERMISOS
+as
+SELECT id,descripcion FROM tb_permisos
+go
+create procedure SP_LISTAR_PERMISOS_USUARIO(
+@id_usuario bigint
+)
+as
+SELECT pr.id,pr.descripcion 
+FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr ON pr.id=prUs.id_permiso 
+WHERE prUs.id_usuario=@id_usuario 
+go
 create procedure SP_AGREGAR_PERMISO(
 @id_usuario bigint,
 @id_permiso bigint
@@ -544,3 +600,139 @@ create procedure SP_ELIMINA_PERMISO(
 as
 DELETE FROM tb_permiso_usuario WHERE id_permiso=@id_permiso AND id_usuario=@id_usuario
 go
+
+--curso
+create procedure SP_LISTAR_CURSOS
+as
+SELECT  cr.id,cr.descripcion,
+case
+	when cr.estado=1 then 'Activo'
+	when cr.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_cursos cr 
+go
+create procedure SP_AGEGAR_CURSO(
+@descripcion varchar(50)
+)
+as
+INSERT INTO tb_cursos (descripcion) VALUES (@descripcion)
+go
+create procedure SP_BUSCA_CURSO(
+@id_curso int
+)
+as
+SELECT id,descripcion,estado FROM tb_cursos WHERE id=@id_curso
+go
+create procedure SP_ACTUALIZA_CURSO(
+@id_curso int ,
+@descripcion varchar(50),
+@estado tinyint
+)
+as
+UPDATE tb_cursos SET descripcion=@descripcion,estado=@estado WHERE id=@id_curso
+go
+
+
+--niveles/grados
+create procedure SP_LISTAR_GRADOS
+as
+SELECT id,descripcion,sigla,
+case 
+	when estado=1 then 'Activo'
+	when estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_grados
+go
+create procedure SP_AGREGA_GRADOS(
+@descripcion varchar(100),
+@sigla varchar(10)
+)
+as
+INSERT INTO tb_grados (descripcion,sigla) VALUES (@descripcion,@sigla)
+go
+create procedure SP_BUSCA_GRADO(
+@id_grado int
+)
+as
+SELECT id,descripcion,sigla,estado FROM tb_grados WHERE id=@id_grado
+go
+create procedure SP_ACTUALIZA_GRADO(
+@id_grado int,
+@descripcion varchar(100),
+@sigla varchar(10),
+@estado tinyint
+)
+as
+UPDATE tb_grados SET descripcion=@descripcion,sigla=@sigla,estado=@estado WHERE id=@id_grado
+go
+create procedure SP_LIST_OPTIONS_NIVELES
+as
+SELECT id,descripcion,sigla FROM tb_grados where estado=1
+go
+
+
+
+--malla curri
+create procedure SP_LISTA_MALLA_CURRICULAR(
+@id_grado int
+)
+as
+SELECT cr.id,cr.descripcion FROM tb_malla_curricular mll 
+INNER JOIN tb_cursos cr ON cr.id=mll.id_curso 
+WHERE mll.id_grado=@id_grado
+go
+create procedure SP_AGREGA_CURSO_MALLA(
+@id_grado int,
+@id_curso int
+)
+as
+INSERT INTO tb_malla_curricular (id_grado,id_curso) VALUES (@id_grado,@id_curso)
+go
+create procedure SP_ELIMINA_CURSO_MALLA(
+@id_grado int,
+@id_curso int
+)
+as
+DELETE FROM tb_malla_curricular WHERE id_curso=@id_curso AND id_grado=@id_grado
+go
+
+--secciones
+create procedure SP_LISTAR_SECCIONES
+as
+SELECT id,descripcion,
+case 
+	when estado=1 then 'Activo'
+	when estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_secciones
+ 
+go
+create procedure SP_AGREGA_SECCIONES(
+@descripcion varchar(50)
+)
+as
+INSERT INTO tb_secciones (descripcion) VALUES (@descripcion)
+go
+create procedure SP_BUSCA_SECCIONES(
+@id int
+)
+as
+SELECT sc.id,sc.descripcion,sc.estado as 'idEstado',
+case
+	when sc.estado=1 then 'Activo'
+	when sc.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_secciones sc WHERE sc.id=@id  
+go
+create procedure SP_ACTUALIZA_SECCIONES(
+@id int,
+@descripcion varchar(50),
+@estado tinyint
+)
+as
+UPDATE tb_secciones SET descripcion=@descripcion,estado=@estado WHERE id=@id 
+go
+
+
+select  * from tb_malla_curricular
+select * from tb_permisos
