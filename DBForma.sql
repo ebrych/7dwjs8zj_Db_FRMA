@@ -204,6 +204,7 @@ begin
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (7,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (8,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (9,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (10,1)
 	SELECT * FROM tb_permiso_usuario
 
 end
@@ -537,6 +538,16 @@ INNER JOIN tb_usuarios us on us.id=al.id_usuario
 INNER JOIN tb_tipo_documento tpo on tpo.id=us.tipo_doc 
 WHERE us.estado!=0
 go
+create procedure SP_BUSCA_ALUMNO_BY_DOC(
+@numero varchar(12)
+)
+as
+SELECT us.id,us.nombre,us.apellidos,tpo.descripcion,us.num_doc
+FROM tb_alumnos al 
+INNER JOIN tb_usuarios us ON us.id=al.id_usuario
+INNER JOIN tb_tipo_documento tpo ON tpo.id=us.tipo_doc 
+WHERE us.num_doc=@numero 
+go
 
 --apoderado (4)
 create procedure SP_AGREGAR_APDERADO(
@@ -772,6 +783,10 @@ create procedure SP_ACTUALIZA_SECCIONES(
 as
 UPDATE tb_secciones SET descripcion=@descripcion,estado=@estado WHERE id=@id 
 go
+create procedure SP_LIST_OPTIONS_SECCIONES
+as
+SELECT id,descripcion FROM tb_secciones WHERE estado=1
+go
 
 --ciclos
 create procedure SP_LISTAR_CICLOS_ACADEMICOS
@@ -810,6 +825,11 @@ as
 UPDATE tb_cliclo_academico SET nombre=@nombre,fecha_ini=@inicio,fech_fin=@fin,estado=@estado 
 WHERE id=@id
 go
+create procedure SP_LIST_OPTIONS_CICLOS_ACADEMICOS
+as
+SELECT id,nombre FROM tb_cliclo_academico WHERE estado=1
+go
+
 
 --matriculas
 create procedure SP_LISTAR_MATRICULA_BY_USUARIO(
@@ -817,7 +837,7 @@ create procedure SP_LISTAR_MATRICULA_BY_USUARIO(
 )
 as
 SELECT 
-us.nombre,us.apellidos,gr.descripcion,gr.sigla,sc.descripcion,cl.nombre,
+mtr.id as 'id_matricula',us.nombre,us.apellidos,gr.descripcion,gr.sigla,sc.descripcion,cl.nombre,
 case
 	when cl.estado = 1 then 'Activo'
 	when cl.estado= 0 then 'Finalizado'
@@ -858,7 +878,8 @@ create procedure SP_BUSCA_MATRICULA(
 @id_matricula bigint
 )
 as
-SELECT us.nombre,us.apellidos,tpo.descripcion,us.num_doc,mt.id_grado,gr.descripcion as 'grado',mt.id_seccion,sc.descripcion as 'seccion',
+SELECT mt.id,us.nombre,us.apellidos,tpo.descripcion as 'tipoDoc',us.num_doc,mt.id_grado as 'idGrado',gr.descripcion as 'grado',
+mt.id_seccion,sc.descripcion as 'seccion',
 mt.id_ciclo_acdemico,cl.nombre,CONVERT(varchar,cl.fecha_ini,121) as 'inicio', CONVERT(varchar,cl.fech_fin,121) as 'fin' 
 FROM tb_matricula mt
 INNER JOIN tb_usuarios us ON mt.id_alumno=us.id
@@ -868,31 +889,94 @@ INNER JOIN tb_cliclo_academico cl ON cl.id=mt.id_ciclo_acdemico
 INNER JOIN tb_tipo_documento tpo ON us.tipo_doc=tpo.id
 WHERE mt.id=@id_matricula
 go
-create procedure SP_ACTUALIZA_MATRICULA(
-@id bigint,
-@id_alumno bigint,
-@id_grado int,
-@id_seccion int,
-@id_ciclo_academic int,
-@estado tinyint
+--create procedure SP_ACTUALIZA_MATRICULA(
+--@id bigint,
+--@id_alumno bigint,
+--@id_grado int,
+--@id_seccion int,
+--@id_ciclo_academic int,
+--@estado tinyint
+--)
+--as
+--variables
+--DECLARE
+--@i int=1,
+--@total_cursos int =0,
+--@idCrMt bigint = 0,
+--@total_notas int = 0,
+--@nota int = 0,
+--@grado int
+--listaDeCursos
+--create table #MatCur(
+--id int identity(1,1),
+--idMatCur bigint
+--)
+--insert into #MatCur (idMatCur)
+--select id from tb_matricula_cursos where id_matricula=@id;
+--numero de regisitros para while
+--select @total_cursos=count(*) from #MatCur
+--ciclo
+--while @i<@total_cursos
+--begin
+--	select @idCrMt=idMatCur from #MatCur where id=@i
+--	select @nota=count(*) from tb_detalle_matricula_curso where id_mat_cur=@idCrMt
+--	set @total_notas=@total_notas+@nota
+--	set @i=@i+1
+--end
+--acciones
+--if @total_notas=0
+--begin
+--	SELECT @grado=id_grado FROM tb_matricula WHERE id=@id
+--	IF @grado=@id_grado
+--	BEGIN
+--		UPDATE tb_matricula SET id_alumno=@id_alumno,id_seccion=@id_seccion,id_ciclo_acdemico=@id_ciclo_academic
+--		WHERE id=@id
+--	END
+--	ELSE
+--	BEGIN
+--		UPDATE tb_matricula SET id_alumno=@id_alumno,id_grado=@id_grado,id_seccion=@id_seccion,id_ciclo_acdemico=@id_ciclo_academic
+--		WHERE id=@id
+--		DELETE FROM tb_matricula_cursos where id_matricula=@id
+--		INSERT INTO tb_matricula_cursos (id_cursos,id_matricula)
+--		SELECT id_curso,@id FROM tb_malla_curricular WHERE id_grado=@id_grado
+--	END
+--end
+--estado
+--UPDATE tb_matricula SET estado=@estado WHERE id=@id
+--go
+create procedure SP_ELIMINA_MATRICULA(
+@id bigint
 )
 as
+--variables
 DECLARE
-@grado int
-SELECT @grado=id_grado FROM tb_matricula WHERE id=@id
-IF @grado=@id_grado
-BEGIN
-	UPDATE tb_matricula SET id_alumno=@id_alumno,id_seccion=@id_seccion,id_ciclo_acdemico=@id_ciclo_academic,estado=@estado
-	WHERE id=@id
-END
-ELSE
-BEGIN
-	UPDATE tb_matricula SET id_alumno=@id_alumno,id_grado=@id_grado,id_seccion=@id_seccion,id_ciclo_acdemico=@id_ciclo_academic,estado=@estado
-	WHERE id=@id
-	DELETE FROM tb_matricula_cursos where id_matricula=@id
-	INSERT INTO tb_matricula_cursos (id_cursos,id_matricula)
-	SELECT id_curso,@id FROM tb_malla_curricular WHERE id_grado=@id_grado
-END
+@i int=1,
+@total_cursos int =0,
+@idCrMt bigint = 0,
+@total_notas int = 0,
+@nota int = 0
+--listaDeCursos
+create table #MatCur(
+id int identity(1,1),
+idMatCur bigint
+)
+insert into #MatCur (idMatCur)
+select id from tb_matricula_cursos where id_matricula=@id;
+--numero de regisitros para while
+select @total_cursos=count(*) from #MatCur
+--ciclo
+while @i<@total_cursos
+begin
+	select @idCrMt=idMatCur from #MatCur where id=@i
+	select @nota=count(*) from tb_detalle_matricula_curso where id_mat_cur=@idCrMt
+	set @total_notas=@total_notas+@nota
+	set @i=@i+1
+end
+if @total_notas=0
+begin
+DELETE FROM tb_matricula_cursos WHERE id_matricula=@id
+DELETE FROM tb_matricula WHERE id=@id
+end
 go
 create procedure SP_LISTAR_CURSO_MATRICULA(
 @id_matricula bigint
@@ -910,5 +994,19 @@ create procedure SP_AGREGA_CURSO_MATRICULA(
 as
 INSERT INTO tb_matricula_cursos (id_matricula,id_cursos)VALUES (@matricula,@id_curso)
 go
-
+create procedure SP_ELIMINA_CURSO_MATRICULA(
+@id_curso int,
+@matricula bigint
+)
+as
+DECLARE
+@notas int=0,
+@Matcurso int =0
+SELECT @Matcurso=id FROM tb_matricula_cursos WHERE id_matricula=@matricula AND id_cursos=@id_curso
+SELECT @notas=count(*) FROM tb_detalle_matricula_curso WHERE id_mat_cur=@Matcurso
+if @notas=0
+begin
+	DELETE FROM tb_matricula_cursos WHERE id_cursos=@id_curso AND id_matricula=@matricula
+end
+go
 
