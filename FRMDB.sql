@@ -1,671 +1,1107 @@
 --use master
---drop DATABASE FRMDB
-create database FRMDB
-use FRMDB
---===========================ESTRUCTURA
-begin
-    --maestros
-    create table tb_tipo_documento(
-    id	int identity(1,1) not null,
-    descripcion	varchar(50) not null,
-    PRIMARY KEY(id)
-    )
-    create table tb_cargo(
-    id	int identity(1,1) not null,
-    descripcion	varchar(100) not null,
-    estado	tinyint default 1 not null,
-    PRIMARY KEY (id)
-    )
-    create table tb_permisos(
-    id	int identity(1,1) not null, 
-    titulo	varchar(20) not null,
-    descripcion	varchar(100) not null,
-    icono	varchar(50) not null,
-    controlador	varchar(50) not null,
-    PRIMARY KEY(id)
-    )
-    create table tb_detalles(
-    id	int identity(1,1) not null,
-    descripcion	varchar(100) not null,
-    placeholder	varchar(200),
-    id_cargo int ,
-    estado	tinyint default 1,
-    PRIMARY KEY (id),
-    FOREIGN KEY (id_cargo) REFERENCES tb_cargo(id)
-    )
-    create table tb_usuario(
-    id	bigint identity(1,1) not null,
-    nombre	varchar(100) not null,
-    apellidos	varchar(200)not null,
-    tipo_doc	int not null,
-    num_doc	varchar(25) not null,
-    usuario	varchar(20) not null,
-    pass	varchar(20) not null,
-    token	varchar(10) null,
-    fech_reg	dateTime default sysdatetime() not null,
-    PRIMARY KEY(id),
-    FOREIGN KEY (tipo_doc) REFERENCES tb_tipo_documento(id)
-    )
-    create table tb_cargo_usuario(
-    id_usuario	bigint not null,
-    id_cargo	int not null,
-    FOREIGN KEY (id_usuario) REFERENCES tb_usuario(id),
-    FOREIGN KEY (id_cargo) REFERENCES tb_cargo(id)
-    )	
-    create table tb_usuario_detalle(
-    id_usuario	bigint not null,
-    id_detalle	int,
-    valor varchar(200),
-    FOREIGN KEY (id_usuario) REFERENCES tb_usuario(id),
-    FOREIGN KEY (id_detalle) REFERENCES tb_detalles(id)
-    )
-    create table tb_grado(
-    id int not null identity(1,1),
-    descripcion varchar(20) not null,
-    sigla varchar(8) not null,
-    estado	tinyint default 1 not null,
-    PRIMARY KEY (id)
-    )
-    create table tb_seccion	(
-    id int not null identity(1,1),
-    descripcion varchar(20) not null,
-    estado	tinyint default 1 not null,
-    PRIMARY KEY (id)
-    )
-    create table tb_cursos(
-    id int not null identity(1,1),
-    descripcion varchar(50) not null,
-    estado	tinyint default 1 not null,
-    PRIMARY KEY (id)
-    )
-    create table tb_permiso_usuario(
-    id_usuario	bigint not null,
-    id_permiso	int not null,
-    FOREIGN KEY (id_usuario) REFERENCES tb_usuario(id),
-    FOREIGN KEY (id_permiso) REFERENCES tb_permisos(id)
-    )	
-    create table tb_apoderado_alumno(
-    id_alumno bigint not null,
-    id_apoderado bigint not null,
-    FOREIGN KEY (id_alumno) REFERENCES tb_usuario(id),
-    FOREIGN KEY (id_apoderado) REFERENCES tb_usuario(id),
-    )
+--drop DATABASE DBFORMA
+create database DBFORMA
+use DBFORMA
 
-    --plantillas
-    create table tb_pantilla_cargo_permiso(
-    id_cargo	int not null,
-    id_permiso	int not null,
-    FOREIGN KEY (id_cargo) REFERENCES tb_cargo (id),
-    FOREIGN KEY (id_permiso) REFERENCES tb_permisos(id)
-    )
-    create table tb_malla_curricular(
-    id_curso int not null,
-    id_grado int not null,
-    FOREIGN KEY (id_curso) REFERENCES tb_cursos(id),
-    FOREIGN KEY (id_grado) REFERENCES tb_grado(id)
-    )
-    --curricula
-    create table tb_cliclo_academico(
-    id	int IDENTITY(1,1) not null,
-    nombre varchar(50) not null,
-    fecha_ini date not null,
-    fech_fin date not null,
-    fech_reg dateTime default sysdatetime() not null,
-    estado  tinyint default 1 not null, 
-    PRIMARY KEY (id)
-    )
-    create table tb_grupos(
-    id	bigint not null IDENTITY(1,1),
-    descripcion	varchar(50),
-    id_profesor	bigint,
-    fech_reg dateTime default sysdatetime() not null,
-    PRIMARY KEY (id),
-    FOREIGN KEY (id_profesor) REFERENCES tb_usuario (id)
-    )
-    create table tb_especificaciones(
-    id	bigint not null identity(1,1),
-    descripcion	varchar(50) not null,
-    id_profesor	bigint not null,
-    id_grupo	bigint not null,
-    PRIMARY KEY (id),
-    FOREIGN KEY (id_profesor) REFERENCES tb_usuario(id),
-    FOREIGN KEY (id_grupo) REFERENCES tb_grupos(id)
-    )
-    create table tb_especificacion_curso(
-    id_curso	int not null,
-    id_espec	bigint not null
-    FOREIGN KEY (id_curso) REFERENCES tb_cursos(id),
-    FOREIGN KEY (id_espec) REFERENCES tb_especificaciones(id)
-    )
-    create table tb_curso_profesor(
-    idCurso	bigint not null,
-    idProfesor	int not null
-    )
-    --matricula
-    create table tb_matricula(
-    id	bigint not null,
-    id_alumno	bigint not null,
-    id_grado	int not null,
-    id_seccion	int not null,
-    id_ciclo_acdemico int not null,
-    fech_reg	dateTime DEFAULT SYSDATETIME() not null,
-    PRIMARY KEY (id),
-    FOREIGN KEY (id_alumno) REFERENCES tb_usuario(id),
-    FOREIGN KEY (id_grado) REFERENCES tb_grado(id),
-    FOREIGN KEY (id_seccion) REFERENCES tb_seccion(id),
-    FOREIGN KEY (id_ciclo_acdemico) REFERENCES tb_cliclo_academico(id)
-    )
-    create table tb_matricula_cursos(
-    id	bigint not null,
-    id_matricula bigint not null,
-    id_curso	int not null,
-    nota_final	decimal(4,2),
-    fech_reg dateTime DEFAULT SYSDATETIME(),
-    PRIMARY KEY (id),
-    FOREIGN KEY (id_matricula) REFERENCES tb_matricula(id),
-    FOREIGN KEY (id_curso) REFERENCES tb_cursos(id)
-    )
-    create table tb_detalle_matricula_curso(
-    id_mat_cur	bigint not null,
-    nota	decimal not null default 0.00,
-    porcentaje	int not null default 0,
-    id_espec	bigint not null,
-    FOREIGN KEY (id_mat_cur) REFERENCES tb_matricula_cursos(id),
-    FOREIGN KEY (id_espec) REFERENCES tb_especificaciones(id)
-    )
+--=========================================ESTRUCTURA
+begin
+--a
+create table tb_tipo_documento(
+id	int identity(1,1) not null,
+descripcion	varchar(50) not null
+primary key (id)
+)
+create table tb_grados(
+id	int identity(1,1) not null,
+descripcion	varchar(100) not null,
+sigla 	varchar(10) not null,
+estado	tinyint default 1 not null,
+primary key(id)
+)
+create table tb_secciones(
+id	int identity (1,1) not null,
+descripcion	varchar(50) not null,
+estado	tinyint default  1 not null,
+primary key(id)
+)
+create table tb_cursos(
+id	int identity(1,1) not null,
+descripcion	varchar(50) not null,
+estado	tinyint default 1 not null
+primary key(id)
+)
+create table tb_cliclo_academico(
+id	int identity(1,1) not null,
+nombre	varchar(50) not null,
+fecha_ini	date not null,
+fech_fin	date not null,
+fech_reg	dateTime default SYSDATETIME(),
+estado	tinyint default 1,
+primary key(id)
+)
+create table tb_permisos(
+id	int identity(1,1) not null,
+titulo	varchar(20) not null,
+descripcion	varchar(100) not null,
+icono	varchar(50) not null,
+controlador	varchar(50)not null,
+primary key(id)
+)
+--b
+create table tb_usuarios(
+id	bigint identity(1,1) not null,
+nombre	varchar(100) not null,
+apellidos	varchar(100) not null,
+usr	varchar(20) not null,
+pas	varchar(10) not null,
+tipo_doc	int not null,
+num_doc	varchar(15) not null,
+direccion	varchar(200) null,
+email	varchar(100) null,
+fecha_reg	dateTime default SYSDATETIME() not null,
+estado tinyint default 1,
+primary key(id),
+foreign key(tipo_doc) references tb_tipo_documento(id)
+)
+create table tb_administrativos(
+id_usuario	bigint not null,
+fech_nac	date null,
+puesto	varchar(100) null default 'SD',
+telefono	varchar(12) null default 'SD',
+foreign key(id_usuario) references tb_usuarios(id)
+)
+create table tb_docentes(
+id_usuario	bigint not null,
+fech_nac	date null,
+telefono	varchar(12) null default 'SD',
+foreign key (id_usuario) references tb_usuarios(id)
+)
+create table tb_alumnos(
+id_usuario	bigint not null,
+fech_nac	date null,
+foreign key(id_usuario) references tb_usuarios(id)
+)
+create table tb_apoderado(
+id_usuario	bigint not null,
+trabajo	varchar(100) not null,
+direccion	varchar(100) not null,
+telefono	varchar(12) not null,
+foreign key(id_usuario) references tb_usuarios(id)
+)
+create table tb_apoderado_alumno(
+id_apoderado bigint,
+id_alumno bigint,
+foreign key (id_apoderado) references tb_usuarios(id),
+foreign key (id_alumno) references tb_usuarios(id)
+)
+create table tb_permiso_usuario(
+id_usuario	bigint,
+id_permiso	int,
+foreign key (id_usuario) references tb_usuarios(id),
+foreign key (id_permiso) references tb_permisos(id)
+)	
+--c
+create table tb_docente_curso(
+id_docente bigint,
+id_curso int,
+FOREIGN KEY(id_docente) REFERENCES tb_usuarios(id),
+FOREIGN KEY(id_curso) REFERENCES tb_cursos(id)
+)
+create table tb_grupos(
+id	bigint identity(1,1) not null,
+descripcion	varchar(50) not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+id_docente	bigint not null,
+primary key(id),
+foreign key (id_docente) references tb_usuarios(id)
+)
+create table tb_especificacion(
+id	bigint identity(1,1) not null,
+descripcion	varchar(50) not null,
+id_docente	bigint not null,
+id_grupo	bigint not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+primary key(id),
+foreign key (id_docente) references tb_usuarios(id),
+foreign key (id_grupo) references tb_grupos(id) 
+)
+--d
+create table tb_malla_curricular(
+id_grado int not null,
+id_curso int not null,
+foreign key (id_grado) references tb_grados(id),
+foreign key (id_curso) references tb_cursos(id)
+)
+create table tb_matricula(
+id	bigint identity(1,1),
+id_alumno	bigint not null,
+id_grado	int not null,
+id_seccion	int not null,
+id_ciclo_acdemico	int not null,
+estado tinyint default 1 not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+primary key(id),
+foreign key (id_alumno) references  tb_usuarios(id),
+foreign key (id_grado) references  tb_grados(id),
+foreign key (id_seccion) references  tb_secciones(id),
+foreign key (id_ciclo_acdemico) references  tb_cliclo_academico(id)
+)
+create table tb_matricula_cursos(
+id	bigint identity(1,1) not null,
+id_matricula	bigint not null,
+id_cursos	int not null,
+nota_final	decimal null,
+id_docente bigint null
+primary key (id),
+foreign key (id_matricula) references tb_matricula(id),
+foreign key (id_cursos) references tb_cursos(id),
+)
+create table tb_detalle_matricula_curso(
+id_mat_cur	bigint not null,
+nota	decimal not null,
+porcentaje	int not null,
+id_espec	bigint not null,
+fech_reg	dateTime default SYSDATETIME() not null,
+foreign key (id_mat_cur) references tb_matricula_cursos(id),
+foreign key (id_espec) references tb_especificacion(id)
+)
+--e
+create table tb_pantilla_cargo_rol(
+id	int not null,
+descripcion varchar(50) not null,
+id_permiso	int not null
+)
+end
+--=========================================DATA INIT
+begin
+	INSERT INTO tb_tipo_documento (descripcion) VALUES ('DNI')
+	INSERT INTO tb_tipo_documento (descripcion) VALUES ('Pasaporte')
+	INSERT INTO tb_tipo_documento (descripcion) VALUES ('Carnet de extrangeria')
+	SELECT * FROM tb_tipo_documento
+
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Administrativos','Gestión de administrativos','fas fa-users','Administrativo')
+    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Inscripciones','Gestión de alumnos','fas fa-user-graduate','Alumno')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Docentes','Gestión de docentes','fas fa-chalkboard-teacher','Docente')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Apoderados','Gestión de apoderados','fab fa-black-tie','Apoderado')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','fas fa-lock','Permiso') --administra permisos de usuario
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos','Gestión de cursos','fas fa-book','Cursos')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión de mallas curriculares','fas fa-layer-group','MallaCurricular')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grados','Gestión de grados y niveles','fas fa-ellipsis-v','Niveles')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Ciclos Academicos','Gestión de ciclos Academicos','fas fa-pencil-ruler','Ciclos')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Matriculas','Gestión de matriculas','fas fa-tasks','Matriculas')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Secciones','Gestión de secciones','fas fa-grip-horizontal','Secciones')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Docente - Curso','Asignacion docentes a cursos','fas fa-user-tag','DocenteCurso')
+	SELECT * FROM tb_permisos
+	
+	INSERT INTO tb_usuarios (nombre,apellidos,tipo_doc,num_doc,direccion,usr,pas) VALUES ('Eber David','Baldarrago',1,'43744482','Av. qwerty 123','root','123')
+	SELECT * FROM tb_usuarios
+
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (1,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (2,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (3,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (4,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (5,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (6,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (7,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (8,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (9,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (10,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (11,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (12,1)
+	SELECT * FROM tb_permiso_usuario
+
 end
 
---===========================DATOS MAESTROS
-begin
-
-    INSERT INTO tb_tipo_documento (descripcion) VALUES ('DNI')
-    INSERT INTO tb_tipo_documento (descripcion) VALUES ('Pasaporte')
-    INSERT INTO tb_tipo_documento (descripcion) VALUES ('Carnet de extrangeria')
-    SELECT * FROM tb_tipo_documento
-
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Personal','Registro de personal','fas fa-users','Personal')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Inscripciones','Registro de alumnos','fas fa-user-graduate','Alumnos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Detalles de Usuarios','Gestión de datos de usuarios','fas fa-info-circle','Detalles') 
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Permisos','Gestión de permisos del sistema','fas fa-lock','Permisos')--asigna permisos/usuario
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cargos','Gestión de cargos','fas fa-id-card-alt','Cargos') --aqui se asigna plantilla permiso/cargo (cuando se ingrese el usuario se toma e inserta todos los permisos...despues puede añadir o quitar desde usuario_permiso)
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Malla Curricular','Gestión de mallas curriculares','fas fa-layer-group','MallaCurricular')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Matriculas','Gestión de matriculas','fas fa-tasks','Matriculas')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grados','Gestión de grados y niveles','fas fa-ellipsis-v','Niveles')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Secciones','Gestión de secciones','fas fa-grip-horizontal','Secciones')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos','Gestión de cursos','fas fa-book','Cursos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Especificaciones','Gestión de especificaciones de calificacion','fas fa-clipboard-check','Especificaciones')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grupos','Agrupación de Especificaciones','far fa-object-group','Grupos')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Asignacion de cursos','Gestión de cursos a docentes','fas fa-chalkboard-teacher','AsignaCurso')
-    INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Academico','Gestión de datos academicos','fas fa-highlighter','Academico') --ingreso de notas a tabla detalle_matricula_curso
-	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Apoderados','Gestión de Apoderados','fab fa-black-tie','Apoderados')
-    SELECT * FROM tb_permisos
+	--data demo de asignacion
+	INSERT INTO tb_pantilla_cargo_rol(id,descripcion,id_permiso) VALUES (1,'Administrativo',2)
+	INSERT INTO tb_pantilla_cargo_rol(id,descripcion,id_permiso) VALUES (1,'Administrativo',3)
 
 
-    INSERT INTO tb_usuario (nombre,apellidos,tipo_doc,num_doc,usuario,pass) VALUES ('Eber David','Baldarrago',1,'43744482','Root','123')
-    SELECT * FROM tb_usuario
-
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (1,1)
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (2,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (3,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (4,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (5,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (6,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (7,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (8,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (9,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (10,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (11,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (12,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (13,1)	
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario) VALUES (14,1)	
-
-            
-    --===========================DATOS DEMO
-	INSERT INTO tb_cargo (descripcion) VALUES ('Ninguno')
-    INSERT INTO tb_cargo (descripcion) VALUES ('Root')
-    SELECT * FROM tb_cargo
-
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Inicial','INI')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Primero de primaria','1º PRIM')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Segundo de primaria','2º PRIM')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Tercero de primaria','3º PRIM')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Cuarto de primaria','4º PRIM')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Quinto de primaria','5º PRIM')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Sexto de primaria','6º PRIM')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Primero de secundaria','1º SEC')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Segundo de secundaria','2º SEC')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Tercero de secundaria','3º SEC')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Cuarto de secundaria','4º SEC')
-    INSERT INTO tb_grado (descripcion,sigla) VALUES ('Quinto de secundaria','5º SEC')
-    SELECT * FROM tb_grado
-
-    INSERT INTO  tb_seccion	(descripcion) VALUES ('A')
-    INSERT INTO  tb_seccion	(descripcion) VALUES ('B')
-    INSERT INTO  tb_seccion	(descripcion) VALUES ('C')
-    SELECT * FROM tb_seccion
-
-    INSERT INTO tb_cursos (descripcion) VALUES ('Matemática')
-    INSERT INTO tb_cursos (descripcion) VALUES ('Comunicación')
-    INSERT INTO tb_cursos (descripcion) VALUES ('Quimica')
-    INSERT INTO tb_cursos (descripcion) VALUES ('Fisica')
-    INSERT INTO tb_cursos (descripcion) VALUES ('Biología')
-    INSERT INTO tb_cursos (descripcion) VALUES ('Trigonometría')
-    INSERT INTO tb_cursos (descripcion) VALUES ('Personal Social')
-    SELECT * FROM tb_cursos
-end
-
---===========================PROCEDIMIENTOS
-
---sesiones
-create procedure SP_LOGIN
-    (
-    @user varchar(20),
-    @pass varchar(20)
-    )
-    as
-    DECLARE
-    @token varchar(10)
-    SET @token= SUBSTRING(CONVERT(varchar(255), NEWID()),3, 10)
-    UPDATE tb_usuario set token=@token WHERE usuario=@user AND pass=@pass
-    SELECT TOP(1) us.id,us.nombre,us.apellidos,@token FROM tb_usuario us WHERE us.usuario=@user AND us.pass=@pass
+--=========================================PROCEDURES
+create procedure SP_LOGIN(
+@user varchar(20),
+@pass varchar(10)
+)
+as
+SELECT us.id,us.nombre,us.apellidos
+FROM tb_usuarios us WHERE (us.usr=@user OR us.num_doc=@user) AND (us.pas=@pass) AND estado=1
 go
-exec SP_LOGIN 'Root','123'
+exec SP_LOGIN 'root','123'
+select * from tb_usuarios
 
-create procedure SP_LOGOUT
-    (
-    @id bigint
-    )
-    as
-    UPDATE tb_usuario set token=null WHERE id=@id
+create procedure SP_LISTA_PERMISOS_BY_USER(
+@id bigint
+)
+as
+SELECT pr.titulo,pr.descripcion,pr.icono,pr.controlador 
+FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr ON pr.id=prUs.id_permiso 
+WHERE prUs.id_usuario=@id
 go
-exec SP_LOGOUT 1
 
-create procedure SP_MIS_PERMISOS
-    (
-    @id bigint
-    )
-    as
-    SELECT 
-    pr.titulo,pr.descripcion,pr.icono,pr.controlador 
-    FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr on prUs.id_permiso=pr.id WHERE prUs.id_usuario=@id
+create procedure SP_LISTA_PERMISOS_BY_USER(
+@id bigint
+)
+as
+SELECT pr.titulo,pr.descripcion,pr.icono,pr.controlador FROM tb_permiso_usuario prU INNER JOIN tb_permisos pr ON pr.id=prU.id_permiso WHERE prU.id_usuario=@id
 go
-exec SP_MIS_PERMISOS 1
+exec SP_LISTA_PERMISOS_BY_USER 1
 
 create procedure SP_CONTROL_PERMISOS(
-    @id bigint,
-    @permiso int
-    )
-    as
-    SELECT count(*) FROM tb_permiso_usuario WHERE id_usuario=@id AND id_permiso=@permiso
+@id bigint,
+@permiso int
+)
+as
+SELECT count(*) FROM tb_permiso_usuario pr INNER JOIN tb_usuarios us ON us.id=pr.id_usuario  WHERE id_usuario=@id AND id_permiso=@permiso AND us.estado=1
 go
 exec SP_CONTROL_PERMISOS 1,1
-create procedure SP_CONTROL_TOKENS(
-    @id bigint,
-    @token varchar(10)
-    )
-    as
-    SELECT count(*) FROM tb_usuario WHERE token=@token AND id=@token
-go
 
---tipoDocumento
-create procedure SP_LISTAR_TIPO_DOC
-    as
-    SELECT id,descripcion FROM tb_tipo_documento 
+create procedure SP_LISTAR_TIPO_DOCUMENTO
+as
+SELECT id,descripcion FROM tb_tipo_documento 
 go
-
---cargos
-create procedure SP_LISTAR_CARGOS
-    as 
-    SELECT cr.id,cr.descripcion,cr.estado,
-    case
-        when cr.estado=0 then 'Inactivo'
-        when cr.estado=1 then 'Activo'
-    end as 'estadoDesc'   
-    FROM tb_cargo cr WHERE id != 2
-go
-create procedure SP_AGREGAR_CARGO(
-    @descripcion varchar(100)
-    )
-    as
-    INSERT INTO tb_cargo (descripcion) VALUES (@descripcion)
-go
-create procedure SP_ACTUALIZA_CARGO(
-    @id int,
-    @descripcion varchar(100)
-    )
-    as
-    UPDATE tb_cargo SET descripcion=@descripcion WHERE id=@id
-    go
-create procedure SP_ELIMINA_CARGO(
-    @usuario bigint,
-    @id int
-    )
-    as
-    UPDATE tb_cargo SET estado=0 WHERE id=@id
-go
+exec SP_LISTAR_TIPO_DOCUMENTO
 
 
---cursos
+--usuario
+create procedure SP_AGREGA_USUARIO(
+@nombre	varchar(100),
+@apellidos	varchar(100),
+@usr	varchar(20),
+@tipo_doc	int,
+@num_doc	varchar(15),
+@direccion	varchar(200),
+@email	varchar(100)
+)
+as
+DECLARE
+@fecha datetime = SYSDATETIME(),
+@psw varchar(6) = SUBSTRING(CONVERT(varchar(255), NEWID()),1, 6)
+INSERT INTO tb_usuarios (nombre,apellidos,usr,pas,tipo_doc,num_doc,direccion,email,fecha_reg)
+VALUES (@nombre,@apellidos,@usr,@psw,@tipo_doc,@num_doc,@direccion,@email,@fecha)
+SELECT id FROM tb_usuarios WHERE num_doc=@num_doc AND fecha_reg=@fecha
+go
+create procedure SP_ACTUALIZA_USUARIO(
+@id bigint,
+@nombre	varchar(100),
+@apellidos	varchar(100),
+@usr	varchar(20),
+@pas varchar(20),
+@tipo_doc	int,
+@num_doc	varchar(15),
+@direccion	varchar(200),
+@email	varchar(100),
+@estado tinyint
+)
+as
+DECLARE
+@mismoNombre int,
+@nBusca varchar(20),
+@coincidenciaUsrName int
+SELECT @coincidenciaUsrName=count(*) FROM tb_usuarios
+SELECT @nBusca=usr FROM tb_usuarios WHERE id=@id
+
+if @nBusca=@usr AND @pas=''
+	begin
+	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
+	tipo_doc=@tipo_doc,num_doc=@num_doc,
+	direccion=@direccion,email=@email,estado=@estado
+	WHERE id=@id
+	end
+else if @nBusca=@usr AND @pas!=''
+	begin
+	UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,pas=@pas,
+	tipo_doc=@tipo_doc,num_doc=@num_doc,
+	direccion=@direccion,email=@email,estado=@estado
+	WHERE id=@id
+	end
+else if @nBusca!=@usr AND @pas=''
+	begin
+	if(@coincidenciaUsrName=0)
+		begin
+		UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,
+		usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
+		direccion=@direccion,email=@email,estado=@estado
+		WHERE id=@id
+		end
+	end
+else if @nBusca!=@usr AND @pas!=''
+	begin
+	if(@coincidenciaUsrName=0)
+		begin
+		UPDATE tb_usuarios SET nombre=@nombre,apellidos=@apellidos,pas=@pas,
+		usr=@usr,tipo_doc=@tipo_doc,num_doc=@num_doc,
+		direccion=@direccion,email=@email,estado=@estado
+		WHERE id=@id
+		end
+	end
+go
+create procedure SP_LIST_OPTIONS_USUARIO
+as
+SELECT us.id,us.nombre,tpo.descripcion,us.num_doc 
+FROM tb_usuarios us
+INNER JOIN tb_tipo_documento tpo ON us.tipo_doc=tpo.id
+WHERE us.estado = 1  
+go
+create procedure SP_BUSCA_USUARIO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,tpoDc.descripcion,us.num_doc,us.email,us.direccion FROM tb_usuarios us 
+INNER JOIN tb_tipo_documento tpoDc ON tpoDc.id=us.tipo_doc 
+WHERE us.id=@id
+go
+--fin usuario
+
+
+--administrativos (1)
+create procedure SP_AGREGAR_DETALLE_ADMINISTRATIVO(
+@id_usuario	bigint,
+@fech_nac	date,
+@puesto	varchar(100),
+@telefono	varchar(12)
+)
+as
+INSERT INTO tb_administrativos (id_usuario,fech_nac,puesto,telefono) 
+VALUES (@id_usuario,@fech_nac,@puesto,@telefono)
+go
+create procedure SP_ACTUALIZA_DETALLE_ADMINISTRATIVO(
+@id_usuario	bigint,
+@fech_nac	date,
+@puesto	varchar(100),
+@telefono	varchar(12)
+)
+as
+UPDATE tb_administrativos SET fech_nac=@fech_nac,puesto=@puesto,telefono=@telefono WHERE id_usuario=id_usuario
+go
+create procedure SP_AGREGA_PERMISOS_ADMINISTRATIVO(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=1
+go
+create procedure SP_LISTAR_ADMINISTRATIVOS
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,
+adm.puesto,adm.telefono,
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr
+FROM tb_administrativos adm INNER JOIN tb_usuarios us ON us.id=adm.id_usuario 
+go
+create procedure SP_BUSCA_ADMINISTRATIVO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,
+tpoDoc.descripcion,us.num_doc,us.direccion,us.email,
+CONVERT(varchar,adm.fech_nac,121),adm.puesto,adm.telefono,us.estado as 'idEstado',
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr 
+FROM tb_administrativos adm 
+INNER JOIN tb_usuarios us ON us.id=adm.id_usuario
+INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc 
+WHERE adm.id_usuario=@id
+go
+
+--docentes (2)
+create procedure SP_AGREGAR_DETALLE_DOCENTE(
+@id_usuario	bigint,
+@fech_nac	date,
+@telefono	varchar(12)
+)
+as
+INSERT INTO tb_docentes (id_usuario,fech_nac,telefono) VALUES (@id_usuario,@fech_nac,@telefono)
+go
+create procedure SP_LISTAR_DOCENTES
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,
+dc.telefono,CONVERT(varchar,dc.fech_nac,121),
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr
+FROM tb_docentes dc INNER JOIN tb_usuarios us ON us.id=dc.id_usuario
+go
+create procedure SP_BUSCAR_DOCENTE(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,tpoDoc.descripcion,
+us.num_doc,us.direccion,us.email,CONVERT(varchar,dc.fech_nac,121),dc.telefono,us.estado as 'idEdtado',
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr 
+FROM tb_docentes dc 
+INNER JOIN tb_usuarios us ON us.id=dc.id_usuario
+INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc 
+WHERE dc.id_usuario=@id
+go
+create procedure SP_ACTUALIZA_DETALLE_DOCENTE(
+@id_usuario	bigint,
+@fech_nac	date,
+@telefono	varchar(12)
+)
+as
+UPDATE tb_docentes SET fech_nac=@fech_nac , telefono=@telefono WHERE id_usuario=@id_usuario
+go
+create procedure SP_AGREGAR_PERMISO_DOCENTE(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=2
+go
+create procedure SP_LISTA_CURSOS_DOCENTE(
+@id bigint
+)
+as
+SELECT cr.id,cr.descripcion,
+case
+	when cr.estado=1 then 'Activo'
+	when cr.estado=0 then 'Inactivo'
+end as 'estado' 
+FROM tb_docente_curso dccr
+INNER JOIN tb_cursos cr ON cr.id=dccr.id_curso
+WHERE dccr.id_docente=@id
+go
+create procedure SP_AGREGA_CURSO_DOCENTE(
+@docente bigint,
+@curso bigint
+)
+as
+INSERT INTO tb_docente_curso (id_docente,id_curso) VALUES (@docente,@curso)
+go
+create procedure SP_ELIMINA_CURSO_DOCENTE(
+@docente bigint,
+@curso bigint
+)
+as
+DELETE FROM tb_docente_curso WHERE id_docente=@docente AND id_curso=@curso
+go
+create procedure SP_LISTA_DOCENTE_BY_CURSO(
+@id_curso int
+)
+as
+SELECT us.id,us.nombre,us.apellidos
+FROM tb_docente_curso dccr
+INNER JOIN tb_usuarios us ON us.id=dccr.id_docente
+WHERE dccr.id_curso=@id_curso
+go
+
+
+--alumno (3)
+create procedure SP_AGREGA_DETALLE_ALUMNO(
+@id_usuario bigint,
+@fech_nac date
+)
+as
+INSERT INTO tb_alumnos (id_usuario,fech_nac) VALUES (@id_usuario,@fech_nac)
+go
+create procedure SP_LISTAR_ALUMNOS
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,convert(varchar,alm.fech_nac,121),
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_alumnos alm 
+INNER JOIN tb_usuarios us ON alm.id_usuario=us.id
+go
+create procedure SP_BUSCA_ALUMNO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,us.direccion,us.tipo_doc,tpoDoc.descripcion,us.num_doc,us.estado as 'idEdtado',
+CONVERT(varchar,al.fech_nac,121),
+case 
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr
+FROM tb_alumnos al 
+INNER JOIN tb_usuarios us ON al.id_usuario=us.id 
+INNER JOIN tb_tipo_documento tpoDoc ON us.tipo_doc=tpoDoc.id
+WHERE al.id_usuario=@id
+go
+create procedure SP_ACTUALIZA_DETALLE_ALUMNO(
+@id_usuario bigint,
+@fech_nac date
+)
+as
+UPDATE tb_alumnos SET id_usuario=@id_usuario, fech_nac=@fech_nac WHERE id_usuario=@id_usuario
+go
+create procedure SP_AGREGAR_PERMISO_ALUMNO(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=3
+go
+create procedure SP_LIST_OPTIONS_ALUMNO
+as
+SELECT us.id,us.nombre,us.apellidos,tpo.descripcion,us.num_doc 
+FROM tb_alumnos al 
+INNER JOIN tb_usuarios us on us.id=al.id_usuario
+INNER JOIN tb_tipo_documento tpo on tpo.id=us.tipo_doc 
+WHERE us.estado!=0
+go
+create procedure SP_BUSCA_ALUMNO_BY_DOC(
+@numero varchar(12)
+)
+as
+SELECT us.id,us.nombre,us.apellidos,tpo.descripcion,us.num_doc
+FROM tb_alumnos al 
+INNER JOIN tb_usuarios us ON us.id=al.id_usuario
+INNER JOIN tb_tipo_documento tpo ON tpo.id=us.tipo_doc 
+WHERE us.num_doc=@numero 
+go
+
+--apoderado (4)
+create procedure SP_AGREGAR_APDERADO(
+@id_usuario bigint,
+@trabajo varchar(100),
+@direccion varchar(100),
+@telefono varchar(12)
+)
+as
+INSERT INTO tb_apoderado (id_usuario,trabajo,direccion,telefono) VALUES (@id_usuario,@trabajo,@direccion,@telefono) 
+go
+create procedure SP_LISTAR_APODERADO
+as
+SELECT
+us.id,us.nombre,us.apellidos,us.email,apo.telefono,apo.trabajo,apo.direccion as 'dirTrabajo',
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr 
+FROM tb_apoderado apo INNER JOIN tb_usuarios us ON us.id=apo.id_usuario
+go
+create procedure SP_BUSCAR_APODERADO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos,us.email,us.direccion,us.tipo_doc,tpoDoc.descripcion as 'documentoDesc',us.num_doc,
+apo.trabajo,apo.telefono,apo.direccion as 'dirTrabajo',us.estado as 'idEstado',
+case
+	when us.estado=1 then 'Activo'
+	when us.estado=0 then 'Inactivo'
+end as 'estado',us.usr 
+FROM tb_apoderado apo 
+INNER JOIN tb_usuarios us ON us.id=apo.id_usuario
+INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc
+WHERE apo.id_usuario=@id
+go
+create procedure SP_ACTUALIZAR_DETALLE_APODERADO(
+@id_usuario bigint,
+@trabajo varchar(100),
+@direccion varchar(100),
+@telefono varchar(12)
+)
+as
+UPDATE tb_apoderado SET trabajo=@trabajo,direccion=@direccion,telefono=@telefono WHERE id_usuario=@id_usuario
+go
+create procedure SP_AGREGA_ALUMNO_APODERADO(
+@id_apoderado bigint,
+@id_alumno bigint
+)
+as
+INSERT INTO tb_apoderado_alumno (id_apoderado,id_alumno) VALUES (@id_apoderado,@id_alumno)
+go
+create procedure SP_LISTA_ALUMNO_APODERADO(
+@id bigint
+)
+as
+SELECT us.id,us.nombre,us.apellidos 
+FROM tb_apoderado_alumno apoAl 
+INNER JOIN tb_usuarios us ON us.id=apoAl.id_alumno
+WHERE apoAl.id_apoderado=@id
+go
+create procedure SP_ELIMINA_ALUMNO_APODERADO(
+@id_apoderado bigint,
+@id_alumno bigint
+)
+as
+DELETE FROM tb_apoderado_alumno WHERE id_alumno=@id_alumno AND id_apoderado=@id_apoderado
+go
+create procedure SP_AGREGAR_PERMISO_APODERADO(
+@id bigint
+)
+as
+INSERT INTO tb_permiso_usuario(id_usuario,id_permiso)
+SELECT @id,id_permiso FROM tb_pantilla_cargo_rol where id=4
+go
+
+--permisos
+create procedure SP_LIST_OPTIONS_PERMISOS
+as
+SELECT id,descripcion FROM tb_permisos
+go
+create procedure SP_LISTAR_PERMISOS_USUARIO(
+@id_usuario bigint
+)
+as
+SELECT pr.id,pr.descripcion 
+FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr ON pr.id=prUs.id_permiso 
+WHERE prUs.id_usuario=@id_usuario 
+go
+create procedure SP_AGREGAR_PERMISO(
+@id_usuario bigint,
+@id_permiso bigint
+)
+as
+INSERT INTO tb_permiso_usuario (id_usuario,id_permiso) VALUES (@id_usuario,@id_permiso)
+go
+create procedure SP_ELIMINA_PERMISO(
+@id_usuario bigint,
+@id_permiso bigint
+)
+as
+DELETE FROM tb_permiso_usuario WHERE id_permiso=@id_permiso AND id_usuario=@id_usuario
+go
+
+--curso
 create procedure SP_LISTAR_CURSOS
-    as
-    SELECT cr.id,cr.descripcion,cr.estado,
-    case
-        when cr.estado=0 then 'Inactivo'
-        when cr.estado=1 then 'Activo'
-    end as 'estadoDesc'
-    FROM tb_cursos cr  
+as
+SELECT  cr.id,cr.descripcion,
+case
+	when cr.estado=1 then 'Activo'
+	when cr.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_cursos cr 
 go
-create procedure SP_AGREGAR_CURSO(
-    @descripcion varchar(50)
-    )
-    as
-    INSERT INTO tb_cursos (descripcion) VALUES (@descripcion)
+create procedure SP_AGEGAR_CURSO(
+@descripcion varchar(50)
+)
+as
+INSERT INTO tb_cursos (descripcion) VALUES (@descripcion)
+go
+create procedure SP_BUSCA_CURSO(
+@id_curso int
+)
+as
+SELECT id,descripcion,estado FROM tb_cursos WHERE id=@id_curso
 go
 create procedure SP_ACTUALIZA_CURSO(
-    @id int,
-    @descripcion varchar(50)
-    )
-    as
-    UPDATE tb_cursos SET descripcion=@descripcion WHERE id=@id
+@id_curso int ,
+@descripcion varchar(50),
+@estado tinyint
+)
+as
+UPDATE tb_cursos SET descripcion=@descripcion,estado=@estado WHERE id=@id_curso
 go
-create procedure SP_ELIMINA_CURSO(
-    @id int
-    )
-    as
-    UPDATE tb_cursos SET estado=0 WHERE id=@id
+create procedure SP_LIST_OPTIONS_CURSOS
+as
+SELECT id,descripcion FROM tb_cursos WHERE estado=1
+go
+
+
+--niveles/grados
+create procedure SP_LISTAR_GRADOS
+as
+SELECT id,descripcion,sigla,
+case 
+	when estado=1 then 'Activo'
+	when estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_grados
+go
+create procedure SP_AGREGA_GRADOS(
+@descripcion varchar(100),
+@sigla varchar(10)
+)
+as
+INSERT INTO tb_grados (descripcion,sigla) VALUES (@descripcion,@sigla)
+go
+create procedure SP_BUSCA_GRADO(
+@id_grado int
+)
+as
+SELECT id,descripcion,sigla,estado FROM tb_grados WHERE id=@id_grado
+go
+create procedure SP_ACTUALIZA_GRADO(
+@id_grado int,
+@descripcion varchar(100),
+@sigla varchar(10),
+@estado tinyint
+)
+as
+UPDATE tb_grados SET descripcion=@descripcion,sigla=@sigla,estado=@estado WHERE id=@id_grado
+go
+create procedure SP_LIST_OPTIONS_NIVELES
+as
+SELECT id,descripcion,sigla FROM tb_grados where estado=1
+go
+
+
+
+--malla curri
+create procedure SP_LISTA_MALLA_CURRICULAR(
+@id_grado int
+)
+as
+SELECT cr.id,cr.descripcion FROM tb_malla_curricular mll 
+INNER JOIN tb_cursos cr ON cr.id=mll.id_curso 
+WHERE mll.id_grado=@id_grado
+go
+create procedure SP_AGREGA_CURSO_MALLA(
+@id_grado int,
+@id_curso int
+)
+as
+INSERT INTO tb_malla_curricular (id_grado,id_curso) VALUES (@id_grado,@id_curso)
+go
+create procedure SP_ELIMINA_CURSO_MALLA(
+@id_grado int,
+@id_curso int
+)
+as
+DELETE FROM tb_malla_curricular WHERE id_curso=@id_curso AND id_grado=@id_grado
 go
 
 --secciones
 create procedure SP_LISTAR_SECCIONES
-    as
-    SELECT 
-    sc.id,sc.descripcion,sc.estado,
-    case
-        when sc.estado=0 then 'Inactivo'
-        when sc.estado=1 then 'Activo'
-    end as 'estadoDesc' 
-    FROM tb_seccion sc
+as
+SELECT id,descripcion,
+case 
+	when estado=1 then 'Activo'
+	when estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_secciones
+ 
 go
-create procedure SP_AGREGAR_SECCION(
-    @descriprion varchar(20)
-    )
-    as
-    INSERT INTO tb_seccion (descripcion) VALUES (@descriprion)
+create procedure SP_AGREGA_SECCIONES(
+@descripcion varchar(50)
+)
+as
+INSERT INTO tb_secciones (descripcion) VALUES (@descripcion)
 go
-create procedure SP_ACTUALIZA_SECCION(
-    @id int,
-    @descriprion varchar(20)
-    )
-    as
-    UPDATE tb_seccion SET descripcion=@descriprion WHERE id=@id
+create procedure SP_BUSCA_SECCIONES(
+@id int
+)
+as
+SELECT sc.id,sc.descripcion,sc.estado as 'idEstado',
+case
+	when sc.estado=1 then 'Activo'
+	when sc.estado=0 then 'Inactivo'
+end as 'estado'
+FROM tb_secciones sc WHERE sc.id=@id  
 go
-create procedure SP_ELIMINA_SECCION(
-    @id int
-    )
-    as
-    UPDATE tb_seccion SET descripcion=0 WHERE id=@id
+create procedure SP_ACTUALIZA_SECCIONES(
+@id int,
+@descripcion varchar(50),
+@estado tinyint
+)
+as
+UPDATE tb_secciones SET descripcion=@descripcion,estado=@estado WHERE id=@id 
 go
-
---grados
-create procedure SP_LISTAR_GRADOS
-    as
-    SELECT gr.id,gr.descripcion,gr.estado,
-    case
-        when gr.estado=0 then 'Inactivo'
-        when gr.estado=1 then 'Activo'
-    end as 'estadoDesc' 
-    FROM tb_grado gr
-go
-create procedure SP_AGREGAR_GRADO(
-    @descriprion varchar(20),
-    @sigla varchar(8)
-    )
-    as
-    INSERT INTO tb_grado (descripcion,sigla) VALUES (@descriprion,@sigla)
-go
-create procedure SP_ACTUALIZA_GRADO(
-    @id int,
-    @descriprion varchar(20) 
-    )
-    as
-    UPDATE tb_grado SET descripcion=@descriprion WHERE id=@id
-go
-create procedure SP_ELIMINA_GRADO(
-    @id int 
-    )
-    as
-    UPDATE tb_grado SET descripcion=0 WHERE id=@id
+create procedure SP_LIST_OPTIONS_SECCIONES
+as
+SELECT id,descripcion FROM tb_secciones WHERE estado=1
 go
 
---ciclos academicos
-create procedure SP_LISTAR_CLICLO_ACACEMICO
-    as
-    SELECT  
-    cl.id,cl.nombre,CONVERT(VARCHAR,cl.fecha_ini,121),CONVERT(VARCHAR,cl.fech_fin,121),
-    case
-        when cl.estado=0 then 'Inactivo'
-        when cl.estado=1 then 'Activo'
-    end as 'estadoDesc'
-    FROM tb_cliclo_academico cl
+--ciclos
+create procedure SP_LISTAR_CICLOS_ACADEMICOS
+as
+SELECT cl.id,cl.nombre,CONVERT(varchar,cl.fecha_ini,121) as 'inicio',CONVERT(varchar,cl.fech_fin,121) as 'fin',
+case
+	when cl.estado=1 then 'Activo'
+	when cl.estado=0 then 'Terminado'
+end as 'estado'
+FROM tb_cliclo_academico cl
 go
-create procedure SP_AGREGAR_CLICLO_ACADEMICO(
-    @nombre	varchar(50),
-    @fecha_ini	varchar(10),
-    @fech_fin	varchar(10)
-    )
-    as
-    INSERT INTO tb_cliclo_academico (nombre,fecha_ini,fech_fin) VALUES (@nombre,@fecha_ini,@fech_fin)
+create procedure SP_AGREGA_CLICLO_ACADEMICO(
+@nombre varchar(50),
+@inicio date,
+@fin date
+)
+as
+INSERT INTO tb_cliclo_academico (nombre,fecha_ini,fech_fin) VALUES (@nombre,@inicio,@fin)
 go
-create procedure SP_ACTUALIZA_CLICLO_ACADEMICO(
-    @id int,
-    @nombre	varchar(50),
-    @fecha_ini	varchar(10),
-    @fech_fin	varchar(10)
-    )
-    as
-    UPDATE tb_cliclo_academico SET nombre=@nombre,fecha_ini=@fecha_ini,fech_fin=@fech_fin WHERE id=@id
+create procedure SP_BUSCA_CICLO_ACADEMICO(
+@id int 
+)
+as
+SELECT cl.id,cl.nombre,CONVERT(varchar,fecha_ini,121) as 'inicio',CONVERT(varchar,fech_fin,121) as 'fin',
+cl.estado 
+FROM tb_cliclo_academico cl WHERE cl.id=@id
 go
-create procedure SP_ELIMINA_CICLO_ACADEMICO(
-        @id int
-    )
-    as
-    UPDATE tb_cliclo_academico SET estado=0 WHERE id=@id
+create procedure SP_ACTUALIZA_CICLO_ACADEMICO(
+@id int,
+@nombre varchar(50),
+@inicio date,
+@fin date,
+@estado tinyint
+)
+as
+UPDATE tb_cliclo_academico SET nombre=@nombre,fecha_ini=@inicio,fech_fin=@fin,estado=@estado 
+WHERE id=@id
 go
+create procedure SP_LIST_OPTIONS_CICLOS_ACADEMICOS
+as
+SELECT id,nombre FROM tb_cliclo_academico WHERE estado=1
+go
+exec SP_LIST_OPTIONS_CICLOS_ACADEMICOS
 
---plantillas permisos
-create procedure SP_LISTAR_PLANTILLA_PERMISO(
-    @cargo int
-    )
-    as
-    SELECT plt.id_permiso,pr.descripcion FROM tb_pantilla_cargo_permiso plt INNER JOIN tb_permisos pr ON pr.id=plt.id_permiso WHERE plt.id_cargo=@cargo
-go
-create procedure SP_INSERTA_PERMISO_CARGO_PLANTILLA(
-    @cargo int,
-    @permiso int
-    )
-    as
-    DECLARE
-    @exist int
-    SELECT @exist=count(*) FROM tb_pantilla_cargo_permiso WHERE id_cargo=@cargo AND id_permiso=@permiso
-    IF @exist=0
-    INSERT INTO tb_pantilla_cargo_permiso (id_cargo,id_permiso) VALUES (@cargo,@permiso)
-go
-create procedure SP_ELIMINA_PERMISO_CARGO_PLANTILLA(
-    @cargo int,
-    @permiso int
-    )
-    as
-    DELETE FROM tb_pantilla_cargo_permiso WHERE id_cargo=@cargo AND id_permiso=@permiso
-go
-
---detalles
-create procedure SP_LISTAR_DETALLES
-    as
-    SELECT dtll.id,cr.descripcion as 'cargo',dtll.placeholder  FROM tb_detalles dtll INNER JOIN tb_cargo cr ON cr.id=dtll.id_cargo
-go
-create procedure SP_AGREGAR_DETALLE(
-    @cargo int,
-    @descripcion varchar(100),
-    @placeholder varchar(100)
-    )
-    as
-    INSERT INTO tb_detalles (descripcion,placeholder,id_cargo)VALUES(@descripcion,@placeholder,@cargo)
-go
-create procedure SP_LISTAR_DETALLE_USUARIO(
+--matriculas
+create procedure SP_LISTAR_MATRICULA_BY_USUARIO(
 @id bigint
 )
 as
-SELECT dt.id,dt.descripcion,dtlls.valor FROM tb_usuario_detalle dtlls INNER JOIN tb_detalles dt ON dt.id=dtlls.id_detalle WHERE dtlls.id_usuario=@id
+SELECT 
+mtr.id as 'id_matricula',us.nombre,us.apellidos,gr.descripcion,gr.sigla,sc.descripcion,cl.nombre,
+case
+	when cl.estado = 1 then 'Activo'
+	when cl.estado= 0 then 'Finalizado'
+end as 'estado_academico',
+case
+	when mtr.estado=1 then 'Normal'
+	when mtr.estado=0 then 'Anulada'
+end as 'estado_matricula' 
+FROM tb_matricula mtr
+INNER JOIN tb_usuarios us ON us.id=mtr.id_alumno
+INNER JOIN tb_grados gr ON mtr.id_grado=gr.id
+INNER JOIN tb_secciones sc ON mtr.id_seccion=sc.id
+INNER  JOIN tb_cliclo_academico cl ON mtr.id_ciclo_acdemico=cl.id
+WHERE us.id=@id 
 go
-create procedure SP_AGREGAR_DETALLE_USUARIO(
-    @id bigint,
-    @detalle int
-    )
-    as
-    DECLARE
-    @exist int
-    SELECT @exist=count(*) FROM tb_usuario_detalle WHERE id_detalle=@detalle AND id_usuario=@id
-    IF @exist=0
-    INSERT INTO tb_usuario_detalle (id_detalle,id_usuario) VALUES (@detalle,@id)
+create procedure SP_AGREGAR_MATRICULA(
+@id_alumno bigint,
+@id_grado int,
+@id_seccion int,
+@id_ciclo_academic int
+)
+as
+DECLARE
+@fecha date = SYSDATETIME(),
+@idMat bigint
+--inserta
+INSERT INTO tb_matricula (id_alumno,id_grado,id_seccion,id_ciclo_acdemico,fech_reg) 
+VALUES (@id_alumno,@id_grado,@id_seccion,@id_ciclo_academic,@fecha)
+--buscaId
+SELECT @idMat=id  
+FROM tb_matricula 
+WHERE id_alumno=@id_alumno AND id_grado=@id_grado AND id_seccion=@id_seccion AND id_ciclo_acdemico=@id_ciclo_academic
+--agrega curso de curricula
+INSERT INTO tb_matricula_cursos (id_matricula,id_cursos)
+SELECT @idMat,id_curso FROM tb_malla_curricular WHERE id_grado=@id_grado
 go
-create procedure SP_ACTUALIZA_CARGO_DETALLE(
-    @id int,
-    @cargo int,
-    @descripcion varchar(100),
-    @placeholder varchar(100)   
-    )
-    as
-    UPDATE tb_detalles SET id_cargo=@cargo,descripcion=@descripcion,placeholder=@placeholder WHERE id=@id
+create procedure SP_BUSCA_MATRICULA(
+@id_matricula bigint
+)
+as
+SELECT mt.id,us.nombre,us.apellidos,tpo.descripcion as 'tipoDoc',us.num_doc,mt.id_grado as 'idGrado',gr.descripcion as 'grado',
+mt.id_seccion,sc.descripcion as 'seccion',
+mt.id_ciclo_acdemico,cl.nombre,CONVERT(varchar,cl.fecha_ini,121) as 'inicio', CONVERT(varchar,cl.fech_fin,121) as 'fin' 
+FROM tb_matricula mt
+INNER JOIN tb_usuarios us ON mt.id_alumno=us.id
+INNER JOIN tb_grados gr ON mt.id_grado=gr.id
+INNER JOIN tb_secciones sc ON mt.id_seccion=sc.id
+INNER JOIN tb_cliclo_academico cl ON cl.id=mt.id_ciclo_acdemico
+INNER JOIN tb_tipo_documento tpo ON us.tipo_doc=tpo.id
+WHERE mt.id=@id_matricula
 go
-create procedure SP_ELIMINA_DETALLE(
-    @id int
-    )
-    as
-    UPDATE tb_detalles set estado=0 WHERE id=@id
+--create procedure SP_ACTUALIZA_MATRICULA(
+--@id bigint,
+--@id_alumno bigint,
+--@id_grado int,
+--@id_seccion int,
+--@id_ciclo_academic int,
+--@estado tinyint
+--)
+--as
+--variables
+--DECLARE
+--@i int=1,
+--@total_cursos int =0,
+--@idCrMt bigint = 0,
+--@total_notas int = 0,
+--@nota int = 0,
+--@grado int
+--listaDeCursos
+--create table #MatCur(
+--id int identity(1,1),
+--idMatCur bigint
+--)
+--insert into #MatCur (idMatCur)
+--select id from tb_matricula_cursos where id_matricula=@id;
+--numero de regisitros para while
+--select @total_cursos=count(*) from #MatCur
+--ciclo
+--while @i<@total_cursos
+--begin
+--	select @idCrMt=idMatCur from #MatCur where id=@i
+--	select @nota=count(*) from tb_detalle_matricula_curso where id_mat_cur=@idCrMt
+--	set @total_notas=@total_notas+@nota
+--	set @i=@i+1
+--end
+--acciones
+--if @total_notas=0
+--begin
+--	SELECT @grado=id_grado FROM tb_matricula WHERE id=@id
+--	IF @grado=@id_grado
+--	BEGIN
+--		UPDATE tb_matricula SET id_alumno=@id_alumno,id_seccion=@id_seccion,id_ciclo_acdemico=@id_ciclo_academic
+--		WHERE id=@id
+--	END
+--	ELSE
+--	BEGIN
+--		UPDATE tb_matricula SET id_alumno=@id_alumno,id_grado=@id_grado,id_seccion=@id_seccion,id_ciclo_acdemico=@id_ciclo_academic
+--		WHERE id=@id
+--		DELETE FROM tb_matricula_cursos where id_matricula=@id
+--		INSERT INTO tb_matricula_cursos (id_cursos,id_matricula)
+--		SELECT id_curso,@id FROM tb_malla_curricular WHERE id_grado=@id_grado
+--	END
+--end
+--estado
+--UPDATE tb_matricula SET estado=@estado WHERE id=@id
+--go
+create procedure SP_ELIMINA_MATRICULA(
+@id bigint
+)
+as
+--variables
+DECLARE
+@i int=1,
+@total_cursos int =0,
+@idCrMt bigint = 0,
+@total_notas int = 0,
+@nota int = 0
+--listaDeCursos
+create table #MatCur(
+id int identity(1,1),
+idMatCur bigint
+)
+insert into #MatCur (idMatCur)
+select id from tb_matricula_cursos where id_matricula=@id;
+--numero de regisitros para while
+select @total_cursos=count(*) from #MatCur
+--ciclo
+while @i<@total_cursos
+begin
+	select @idCrMt=idMatCur from #MatCur where id=@i
+	select @nota=count(*) from tb_detalle_matricula_curso where id_mat_cur=@idCrMt
+	set @total_notas=@total_notas+@nota
+	set @i=@i+1
+end
+if @total_notas=0
+begin
+DELETE FROM tb_matricula_cursos WHERE id_matricula=@id
+DELETE FROM tb_matricula WHERE id=@id
+end
+go
+create procedure SP_LISTAR_CURSO_MATRICULA(
+@id_matricula bigint
+)
+as
+SELECT cr.id,cr.descripcion 
+FROM tb_matricula_cursos mtcr 
+INNER JOIN tb_cursos cr ON mtcr.id_cursos=cr.id
+WHERE mtcr.id_matricula=@id_matricula
+go
+create procedure SP_AGREGA_CURSO_MATRICULA(
+@id_curso int,
+@matricula bigint
+)
+as
+INSERT INTO tb_matricula_cursos (id_matricula,id_cursos)VALUES (@matricula,@id_curso)
+go
+create procedure SP_ELIMINA_CURSO_MATRICULA(
+@id_curso int,
+@matricula bigint
+)
+as
+DECLARE
+@notas int=0,
+@Matcurso int =0
+SELECT @Matcurso=id FROM tb_matricula_cursos WHERE id_matricula=@matricula AND id_cursos=@id_curso
+SELECT @notas=count(*) FROM tb_detalle_matricula_curso WHERE id_mat_cur=@Matcurso
+if @notas=0
+begin
+	DELETE FROM tb_matricula_cursos WHERE id_cursos=@id_curso AND id_matricula=@matricula
+end
 go
 
---usuarios
-create procedure SP_AGREGAR_USUARIO(
-    @nombre	varchar(100),
-    @apellidos	varchar(200),
-    @tipo_doc	int,
-    @num_doc	varchar(25),
-    @user	varchar(20),
-    @pass	varchar(20)   
-    )
-    as
-    INSERT INTO tb_usuario (nombre,apellidos,tipo_doc,num_doc,usuario,pass) VALUES (@nombre,@apellidos,@tipo_doc,@num_doc,@user,@pass)
+--Docente - Curso
+create procedure SP_LISTA_GRADO_BY_MATRICULAS
+as
+select DISTINCT sc.id as 'id_seccion' ,sc.descripcion as 'seccion',gr.id as 'id_nivel',gr.descripcion,cl.id as 'id_ciclo',cl.nombre as 'ciclo'
+,(select count(*) from tb_matricula where id_grado=mt.id_grado and id_seccion=mt.id_seccion) as 'cantidad_alumnos'
+from tb_matricula mt
+inner join  tb_grados gr on mt.id_grado=gr.id
+inner join tb_secciones sc on mt.id_seccion=sc.id
+inner join tb_cliclo_academico cl on mt.id_ciclo_acdemico=cl.id
+where mt.estado=1
 go
-create procedure SP_BUSCA_INTERNO_ID_USUARIO(
-    @num_doc varchar(25)    
-    )
-    as
-    SELECT top(1)id FROM tb_usuario WHERE num_doc=@num_doc
+create procedure SP_LISTA_CURSO_BY_MATRICULAS(
+@id_ciclo int,
+@id_seccion int,
+@id_grado int
+)
+as
+select DISTINCT cr.id as 'id_curso' ,cr.descripcion,@id_ciclo as 'ciclo',@id_seccion as 'seccion',@id_grado as 'nivel' --,mtcr.id as 'id_matricula_curso' 
+from tb_matricula_cursos mtcr
+inner join tb_matricula mt on mtcr.id_matricula=mt.id
+inner join tb_cursos cr on cr.id=mtcr.id_cursos
+where mt.id_ciclo_acdemico=@id_ciclo and mt.id_seccion=@id_seccion and mt.id_grado=@id_grado
 go
-create procedure SP_AGREGA_CARGO_USUARIO(
-    @id bigint,
-    @cargo int 
-    )
-    as
-    DECLARE
-    @exist int
-    SELECT @exist=count(*) FROM tb_cargo_usuario WHERE id_usuario=@id AND id_cargo=@cargo
-    IF @exist=0
-    INSERT INTO tb_cargo_usuario (id_usuario,id_cargo) VALUES (@id,@cargo)
+--drop procedure SP_LISTA_CURSO_BY_MATRICULAS
+--exec SP_LISTA_CURSO_BY_MATRICULAS 1,1,2;
+create procedure SP_BUSCA_DATO_CURSO_MATRICULA(
+@id_curso int,
+@id_ciclo int,
+@id_seccion int,
+@id_nivel int
+)
+as
+select DISTINCT cr.id as 'id_curso' ,cr.descripcion,
+@id_ciclo as 'ciclo',
+(select nombre from tb_cliclo_academico where id=@id_ciclo) as 'cilo_desc',
+@id_seccion as 'seccion',
+(select descripcion from tb_secciones where id=@id_seccion) as 'seccion_desc',
+@id_nivel as 'nivel',
+(select descripcion from tb_grados where id=@id_nivel) as 'nivel_desc',
+case
+	when mtcr.id_docente is null then 'Sin Asignar'
+	when mtcr.id_docente is not null then (select CONCAT(nombre,' ',apellidos) from tb_usuarios where id=mtcr.id_docente)
+end as 'usuario'
+from tb_matricula_cursos mtcr
+inner join tb_matricula mt on mtcr.id_matricula=mt.id
+inner join tb_cursos cr on cr.id=mtcr.id_cursos
+where mt.id_ciclo_acdemico=@id_ciclo and mt.id_seccion=@id_seccion and mt.id_grado=@id_nivel and id_cursos=@id_curso
 go
-create procedure SP_ELIMINA_CARGO_USUARIO(
-    @id bigint,
-    @cargo int
-    )
-    as
-    DELETE FROM tb_cargo_usuario WHERE id_usuario=@id AND id_cargo=@cargo
-go
-create procedure SP_LISTAR_CARGO_USUARIO(
-    @id bigint
-    )
-    as
-    SELECT cr.id,cr.descripcion FROM tb_cargo_usuario crUs INNER JOIN tb_cargo cr ON cr.id=crUs.id_cargo WHERE crUs.id_usuario=@id 
-go
-create procedure SP_AUTO_AGREGA_PERMISO_USUARIO(
-    @id bigint,
-    @cargo int
-    )
-    as
-    INSERT INTO tb_permiso_usuario
-    SELECT @id as 'id_usuario',plt.id_permiso as 'id_permiso' FROM tb_pantilla_cargo_permiso plt WHERE plt.id_cargo=@cargo
-go
-create procedure SP_AUTO_ELMINA_PERMISO_USUARIO(
-    @id bigint,
-    @cargo int  
-    )
-    as
-    DELETE FROM tb_permiso_usuario 
-    WHERE id_permiso IN (SELECT * FROM tb_pantilla_cargo_permiso plt WHERE plt.id_cargo=@id)
-    AND id_usuario=@id 
-go
-create procedure SP_LISTAR_USUARIOS(
-    @usuario bigint,
-    @cargo int
-    )
-    as
-    SELECT us.id,us.nombre,us.apellidos,us.tipo_doc,tpoDoc.descripcion 
-	FROM tb_cargo_usuario crUs 
-	INNER JOIN tb_usuario us ON crUs.id_usuario=us.id 
-	INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc WHERE crUs.id_cargo=@cargo 
-go
-create procedure SP_BUSCAR_USUARIO(
-    @id bigint
-    )
-    as
-    SELECT us.id,us.nombre,us.apellidos,us.tipo_doc as 'id_tipo_doc' ,tpoDoc.descripcion as 'documento',us.num_doc as 'numDoc' 
-    FROM tb_usuario us INNER JOIN tb_tipo_documento tpoDoc ON tpoDoc.id=us.tipo_doc WHERE us.id=@id
-go
-create procedure SP_ELIMINA_DETALLE_USUARIO(
-    @id bigint,
-    @detalle int 
-    )
-    as
-    DELETE FROM tb_usuario_detalle WHERE id_usuario=@id AND id_detalle=@detalle
-go
-create procedure SP_LISTA_PERMISOS_USUARIO(
-    @id bigint
-    )
-    as
-    SELECT pr.id,pr.descripcion,pr.icono FROM tb_permiso_usuario prUs INNER JOIN tb_permisos pr on prUs.id_permiso=pr.id WHERE prUs.id_usuario=@id
-go
-create procedure SP_AGREGA_PERMISO_USUARIO(
-    @id bigint,
-    @permiso int
-    )
-    as
-    INSERT INTO tb_permiso_usuario (id_permiso,id_usuario)VALUES(@permiso,@id)
-go
-create procedure SP_ELIMINA_PERMISO_USUARIO(
-    @id bigint,
-    @permiso int   
-    )
-    as
-    DELETE FROM tb_permiso_usuario WHERE id_usuario=@id AND id_permiso=@permiso
+--drop procedure SP_BUSCA_DATO_CURSO_MATRICULA
+exec SP_BUSCA_DATO_CURSO_MATRICULA 3,1,1,2;
+
+create procedure SP_AGREGA_DOCENTE_TO_MATRICULA(
+@id_docente bigint,
+@id_ciclo int,
+@id_seccion int,
+@id_grado int,
+@id_curso int
+)
+as
+DECLARE
+@i int = 1,
+@total int=0
+create table #tbList(
+idt int identity(1,1) not null,
+idMat bigint
+)
+insert into #tbList (idMat)
+select mtcr.id 
+from tb_matricula_cursos mtcr 
+inner join tb_matricula mt on mtcr.id_matricula=mt.id
+where id_cursos=@id_curso and mt.id_ciclo_acdemico=@id_ciclo and mt.id_seccion=@id_seccion and mt.id_grado=@id_grado
+--asigna
+select @total=count(*) from #tbList
+while @i<@total
+begin
+	update tb_matricula_cursos set id_docente=@id_docente WHERE id=@i
+	set @i=@i+1 
+end
 go
 
---apoderado-alumno
-create procedure SP_LISTA_MIS_HIJOS(
-    @id bigint
-    )
-    as
-    SELECT us.id,us.nombre,us.apellidos FROM tb_apoderado_alumno alms INNER JOIN tb_usuario us ON alms.id_alumno=us.id WHERE id_apoderado=@id
-go
-create procedure SP_AGREGA_HIJO_APODERADO(
-    @hijo bigint,
-    @padre bigint
-    )
-    as
-    INSERT INTO tb_apoderado_alumno (id_apoderado,id_alumno) VALUES (@padre,@hijo)
-go
-create procedure SP_ELIMINA_HIJO_APODERADO(
-    @hijo bigint,
-    @padre bigint
-    )
-    as
-    DELETE FROM tb_apoderado_alumno WHERE id_alumno=@hijo AND id_apoderado=@padre
-go
