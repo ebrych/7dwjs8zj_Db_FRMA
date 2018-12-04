@@ -189,7 +189,8 @@ begin
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Grados','Gestión de grados y niveles','fas fa-ellipsis-v','Niveles')
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Ciclos Academicos','Gestión de ciclos Academicos','fas fa-pencil-ruler','Ciclos')
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Matriculas','Gestión de matriculas','fas fa-tasks','Matriculas')
-
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Secciones','Gestión de secciones','fas fa-grip-horizontal','Secciones')
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Docente - Curso','Asignacion docentes a cursos','fas fa-user-tag','DocenteCurso')
 	SELECT * FROM tb_permisos
 	
 	INSERT INTO tb_usuarios (nombre,apellidos,tipo_doc,num_doc,direccion,usr,pas) VALUES ('Eber David','Baldarrago',1,'43744482','Av. qwerty 123','root','123')
@@ -205,6 +206,8 @@ begin
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (8,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (9,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (10,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (11,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (12,1)
 	SELECT * FROM tb_permiso_usuario
 
 end
@@ -480,7 +483,15 @@ create procedure SP_ELIMINA_CURSO_DOCENTE(
 as
 DELETE FROM tb_docente_curso WHERE id_docente=@docente AND id_curso=@curso
 go
-
+create procedure SP_LISTA_DOCENTE_BY_CURSO(
+@id_curso int
+)
+as
+SELECT us.id,us.nombre,us.apellidos
+FROM tb_docente_curso dccr
+INNER JOIN tb_usuarios us ON us.id=dccr.id_docente
+WHERE dccr.id_curso=@id_curso
+go
 
 
 --alumno (3)
@@ -682,6 +693,10 @@ create procedure SP_ACTUALIZA_CURSO(
 as
 UPDATE tb_cursos SET descripcion=@descripcion,estado=@estado WHERE id=@id_curso
 go
+create procedure SP_LIST_OPTIONS_CURSOS
+as
+SELECT id,descripcion FROM tb_cursos WHERE estado=1
+go
 
 
 --niveles/grados
@@ -829,11 +844,11 @@ create procedure SP_LIST_OPTIONS_CICLOS_ACADEMICOS
 as
 SELECT id,nombre FROM tb_cliclo_academico WHERE estado=1
 go
-
+exec SP_LIST_OPTIONS_CICLOS_ACADEMICOS
 
 --matriculas
 create procedure SP_LISTAR_MATRICULA_BY_USUARIO(
-@num_doc_alm varchar(15)
+@id bigint
 )
 as
 SELECT 
@@ -851,7 +866,7 @@ INNER JOIN tb_usuarios us ON us.id=mtr.id_alumno
 INNER JOIN tb_grados gr ON mtr.id_grado=gr.id
 INNER JOIN tb_secciones sc ON mtr.id_seccion=sc.id
 INNER  JOIN tb_cliclo_academico cl ON mtr.id_ciclo_acdemico=cl.id
-WHERE us.num_doc=@num_doc_alm 
+WHERE us.id=@id 
 go
 create procedure SP_AGREGAR_MATRICULA(
 @id_alumno bigint,
@@ -1007,6 +1022,89 @@ SELECT @notas=count(*) FROM tb_detalle_matricula_curso WHERE id_mat_cur=@Matcurs
 if @notas=0
 begin
 	DELETE FROM tb_matricula_cursos WHERE id_cursos=@id_curso AND id_matricula=@matricula
+end
+go
+
+--Docente - Curso
+create procedure SP_LISTA_GRADO_BY_MATRICULAS
+as
+select DISTINCT sc.id as 'id_seccion' ,sc.descripcion as 'seccion',gr.id as 'id_nivel',gr.descripcion,cl.id as 'id_ciclo',cl.nombre as 'ciclo'
+,(select count(*) from tb_matricula where id_grado=mt.id_grado and id_seccion=mt.id_seccion) as 'cantidad_alumnos'
+from tb_matricula mt
+inner join  tb_grados gr on mt.id_grado=gr.id
+inner join tb_secciones sc on mt.id_seccion=sc.id
+inner join tb_cliclo_academico cl on mt.id_ciclo_acdemico=cl.id
+where mt.estado=1
+go
+create procedure SP_LISTA_CURSO_BY_MATRICULAS(
+@id_ciclo int,
+@id_seccion int,
+@id_grado int
+)
+as
+select DISTINCT cr.id as 'id_curso' ,cr.descripcion,@id_ciclo as 'ciclo',@id_seccion as 'seccion',@id_grado as 'nivel' --,mtcr.id as 'id_matricula_curso' 
+from tb_matricula_cursos mtcr
+inner join tb_matricula mt on mtcr.id_matricula=mt.id
+inner join tb_cursos cr on cr.id=mtcr.id_cursos
+where mt.id_ciclo_acdemico=@id_ciclo and mt.id_seccion=@id_seccion and mt.id_grado=@id_grado
+go
+--drop procedure SP_LISTA_CURSO_BY_MATRICULAS
+--exec SP_LISTA_CURSO_BY_MATRICULAS 1,1,2;
+create procedure SP_BUSCA_DATO_CURSO_MATRICULA(
+@id_curso int,
+@id_ciclo int,
+@id_seccion int,
+@id_nivel int
+)
+as
+select DISTINCT cr.id as 'id_curso' ,cr.descripcion,
+@id_ciclo as 'ciclo',
+(select nombre from tb_cliclo_academico where id=@id_ciclo) as 'cilo_desc',
+@id_seccion as 'seccion',
+(select descripcion from tb_secciones where id=@id_seccion) as 'seccion_desc',
+@id_nivel as 'nivel',
+(select descripcion from tb_grados where id=@id_nivel) as 'nivel_desc',
+case
+	when mtcr.id_docente is null then '0'
+	when mtcr.id_docente is not null then mtcr.id_docente
+end as 'usuario'
+--case
+--	when mtcr.id_docente is null then 'Sin Asignar'
+--	when mtcr.id_docente is not null then (select CONCAT(nombre,' ',apellidos) from tb_usuarios where id=mtcr.id_docente)
+--end as 'usuario'
+from tb_matricula_cursos mtcr
+inner join tb_matricula mt on mtcr.id_matricula=mt.id
+inner join tb_cursos cr on cr.id=mtcr.id_cursos
+where mt.id_ciclo_acdemico=@id_ciclo and mt.id_seccion=@id_seccion and mt.id_grado=@id_nivel and id_cursos=@id_curso
+go
+exec SP_BUSCA_DATO_CURSO_MATRICULA 3,1,1,2;
+
+create procedure SP_AGREGA_DOCENTE_TO_MATRICULA(
+@id_docente bigint,
+@id_ciclo int,
+@id_seccion int,
+@id_grado int,
+@id_curso int
+)
+as
+DECLARE
+@i int = 1,
+@total int=0
+create table #tbList(
+idt int identity(1,1) not null,
+idMat bigint
+)
+insert into #tbList (idMat)
+select mtcr.id 
+from tb_matricula_cursos mtcr 
+inner join tb_matricula mt on mtcr.id_matricula=mt.id
+where id_cursos=@id_curso and mt.id_ciclo_acdemico=@id_ciclo and mt.id_seccion=@id_seccion and mt.id_grado=@id_grado
+--asigna
+select @total=count(*) from #tbList
+while @i<@total
+begin
+	update tb_matricula_cursos set id_docente=@id_docente WHERE id=@i
+	set @i=@i+1 
 end
 go
 
