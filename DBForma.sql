@@ -167,11 +167,13 @@ foreign key (id_matricula) references tb_matricula(id),
 foreign key (id_cursos) references tb_cursos(id),
 )
 create table tb_detalle_matricula_curso(
+id bigint identity(1,1) not null,
 id_mat_cur	bigint not null,
 nota	decimal not null,
 porcentaje	int not null,
 id_espec	bigint not null,
 fech_reg	dateTime default SYSDATETIME() not null,
+primary key(id),
 foreign key (id_mat_cur) references tb_matricula_cursos(id),
 foreign key (id_espec) references tb_especificacion(id)
 )
@@ -580,6 +582,19 @@ INNER JOIN tb_usuarios us ON us.id=al.id_usuario
 INNER JOIN tb_tipo_documento tpo ON tpo.id=us.tipo_doc 
 WHERE us.num_doc=@numero 
 go
+create procedure SP_BUSCA_ALUMNO_BY_CURSO_MATRICULA(
+@curso_matricula bigint
+)
+as
+DECLARE 
+@mt bigint
+select @mt=id_matricula from tb_matricula_cursos where id=@curso_matricula
+select us.id,us.nombre,us.apellidos from tb_matricula mt 
+inner join tb_usuarios us on us.id=mt.id_alumno
+where mt.id=@mt
+go
+
+
 
 --apoderado (4)
 create procedure SP_AGREGAR_APDERADO(
@@ -1266,6 +1281,17 @@ update tb_especificacion
 set descripcion=@descripcion,id_docente=@docente,id_grupo=@grupo,fech_reg=SYSDATETIME(),estado=@estado 
 WHERE id=@id
 go
+create procedure SP_LIST_OPTIONS_ESPECIFICACIONES(
+@docente bigint,
+@curso int
+)
+as
+select es.id, es.descripcion
+from tb_especificacion_curso esCr
+inner join tb_especificacion es on esCr.id_especificacion=es.id 
+where esCr.id_curso=@curso and esCr.id_docente=@docente and es.estado=1
+go
+
 
 --CursosDelDocente
 create procedure SP_LISTA_ESPECIFICACIONES_BY_CURSO(
@@ -1318,10 +1344,50 @@ create procedure SP_LISTAR_ALUMNOS_CURSO_DOCENTE(
 @docente bigint
 )
 as
-select mt.id,al.nombre,al.apellidos
+select mtCr.id as 'matriculaCurs_id',al.id,al.nombre,al.apellidos
 from tb_matricula_cursos mtCr
 inner join tb_matricula mt on mtCr.id=mt.id
 inner join tb_usuarios al on al.id=mt.id_alumno 
 where id_cursos=@curso and id_docente=@docente
 go
+
+
+create procedure SP_LISTA_DETALLE_MATRICULA_CURSO_ALMUNO(
+@matricula bigint,
+@curso int,
+@docente bigint
+)
+as
+DECLARE
+@idMatCur bigint
+select @idMatCur=id from tb_matricula_cursos 
+where id_matricula=@matricula and id_cursos=@curso and id_docente=@docente
+select dtll.id,dtll.nota,dtll.porcentaje,dtll.id_espec,es.descripcion 
+from tb_detalle_matricula_curso dtll
+inner join tb_especificacion es on dtll.id_espec=es.id
+where id_mat_cur=@matricula
+go
+create procedure SP_AGREGAR_DETALLE_TO_DETALLEMATRICULACURSO(
+@matriculaCurso bigint,
+@nota decimal,
+@porcentaje int,
+@especificacion bigint
+)
+as
+DECLARE
+@totalPercent int
+select @totalPercent=sum(porcentaje) from tb_detalle_matricula_curso where id_mat_cur=1
+if @totalPercent<100
+begin
+	INSERT INTO tb_detalle_matricula_curso (id_mat_cur,nota,porcentaje,id_espec) VALUES (@matriculaCurso,@nota,@porcentaje,@especificacion)
+end 
+go
+create procedure SP_ELIMINA_DETALLE_TO_DETALLEMATRICULACURSO(
+@detalle bigint
+)
+as
+DELETE FROM tb_detalle_matricula_curso where id=@detalle
+go
+
+
 
