@@ -160,7 +160,7 @@ create table tb_matricula_cursos(
 id	bigint identity(1,1) not null,
 id_matricula	bigint not null,
 id_cursos	int not null,
-nota_final	decimal null,
+nota_final	decimal(4,2) null,
 id_docente bigint null
 primary key (id),
 foreign key (id_matricula) references tb_matricula(id),
@@ -169,7 +169,7 @@ foreign key (id_cursos) references tb_cursos(id),
 create table tb_detalle_matricula_curso(
 id bigint identity(1,1) not null,
 id_mat_cur	bigint not null,
-nota	decimal not null,
+nota	decimal(4,2) not null,
 porcentaje	int not null,
 id_espec	bigint not null,
 fech_reg	dateTime default SYSDATETIME() not null,
@@ -1350,8 +1350,6 @@ inner join tb_matricula mt on mtCr.id=mt.id
 inner join tb_usuarios al on al.id=mt.id_alumno 
 where id_cursos=@curso and id_docente=@docente
 go
-
-
 create procedure SP_LISTA_DETALLE_MATRICULA_CURSO_ALMUNO(
 @matricula bigint,
 @curso int,
@@ -1367,6 +1365,38 @@ from tb_detalle_matricula_curso dtll
 inner join tb_especificacion es on dtll.id_espec=es.id
 where id_mat_cur=@matricula
 go
+
+create procedure SP_TOTAL_DETALLE_MATRICULA_CURSO_ALUMNO(
+@matricula bigint,
+@curso int
+)
+as
+create table #notas(
+id int identity(1,1) not null, 
+nota decimal(4,2) not null,
+porcentaje int not null
+)
+DECLARE
+@idMatCur bigint,
+@total int=0,
+@i int = 1,
+@notaTotal decimal(4,2)=0,
+@porTotal int =0
+select @idMatCur=id from tb_matricula_cursos 
+where id_matricula=@matricula and id_cursos=@curso
+insert into #notas (nota,porcentaje)
+select dtll.nota,dtll.porcentaje
+from tb_detalle_matricula_curso dtll
+inner join tb_especificacion es on dtll.id_espec=es.id
+where id_mat_cur=@matricula
+select @total=count(*) from #notas
+while @i<@total
+begin
+	
+	set @i=@i+1
+end
+go
+
 create procedure SP_AGREGAR_DETALLE_TO_DETALLEMATRICULACURSO(
 @matriculaCurso bigint,
 @nota decimal,
@@ -1375,12 +1405,18 @@ create procedure SP_AGREGAR_DETALLE_TO_DETALLEMATRICULACURSO(
 )
 as
 DECLARE
-@totalPercent int
-select @totalPercent=sum(porcentaje) from tb_detalle_matricula_curso where id_mat_cur=1
-if @totalPercent<100
-begin
-	INSERT INTO tb_detalle_matricula_curso (id_mat_cur,nota,porcentaje,id_espec) VALUES (@matriculaCurso,@nota,@porcentaje,@especificacion)
-end 
+@percent int = 0
+select 
+ @percent=(case
+ when SUM(porcentaje)is null then 0
+ when SUM(porcentaje)is not null then SUM(porcentaje)
+ end) 
+from tb_detalle_matricula_curso
+set @percent=@percent+@porcentaje
+	if @percent < 100
+	begin
+	INSERT INTO tb_detalle_matricula_curso (id_mat_cur,nota,porcentaje,id_espec) VALUES (@matriculaCurso,@nota,@porcentaje,@especificacion) 
+	end
 go
 create procedure SP_ELIMINA_DETALLE_TO_DETALLEMATRICULACURSO(
 @detalle bigint
@@ -1388,6 +1424,3 @@ create procedure SP_ELIMINA_DETALLE_TO_DETALLEMATRICULACURSO(
 as
 DELETE FROM tb_detalle_matricula_curso where id=@detalle
 go
-
-
-
