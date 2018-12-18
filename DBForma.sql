@@ -136,11 +136,12 @@ FOREIGN KEY (id_especificacion) REFERENCES tb_especificacion,
 FOREIGN KEY (id_docente) REFERENCES tb_usuarios
 )
 create table tb_atencion_docente(
-id_docente bigint,
+id bigint identity(1,1) not null,
+id_docente bigint not null,
 fecha date,
-dia	varchar(50),
 hora_ini time,
 hora_fin time,
+primary key (id),
 foreign key (id_docente) references tb_usuarios(id)
 )
 --d
@@ -217,9 +218,11 @@ begin
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Cursos del docente','Gestión de sus cursos del docente','fas fa-chalkboard','CursosDeDocente') --exclusivo docentes
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Calificaciones','Gestión de calificaciones','fas fa-pen-alt','GestionCalificaciones') --exclusivo docentes
 	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Mis Hijos','Reporte de Hijos','fas fa-child','MisHijos') --exclusivo padres
-	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Atenciones','Horarios de Atención','fas fa-calendar-day','Atencion') --exclusivo docentes y repo publico
-	SELECT * FROM tb_permisos 
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Atenciones','Horarios de Atención','far fa-calendar-alt','Atencion') --exclusivo docentes y repo publico
+	INSERT INTO tb_permisos (titulo,descripcion,icono,controlador) VALUES ('Mis Notas','Mis Notas','fas fa-font','Notas') --exclusivo alumno
 
+	SELECT * FROM tb_permisos 
+	
 	INSERT INTO tb_usuarios (nombre,apellidos,tipo_doc,num_doc,direccion,usr,pas) VALUES ('Eber David','Baldarrago',1,'43744482','Av. qwerty 123','root','123')
 	SELECT * FROM tb_usuarios
 
@@ -241,6 +244,7 @@ begin
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (16,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (17,1)
 	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (18,1)
+	INSERT INTO tb_permiso_usuario(id_permiso,id_usuario) values (19,1)
 	SELECT * FROM tb_permiso_usuario
 
 	INSERT INTO tb_grupos(descripcion,fech_reg,id_docente) VALUES ('Ninguno',SYSDATETIME(),1)
@@ -503,7 +507,6 @@ FROM tb_docente_curso dccr
 INNER JOIN tb_cursos cr ON cr.id=dccr.id_curso
 WHERE dccr.id_docente=@id
 go
-
 create procedure SP_AGREGA_CURSO_DOCENTE(
 @docente bigint,
 @curso bigint
@@ -526,6 +529,52 @@ SELECT us.id,us.nombre,us.apellidos
 FROM tb_docente_curso dccr
 INNER JOIN tb_usuarios us ON us.id=dccr.id_docente
 WHERE dccr.id_curso=@id_curso
+go
+create procedure SP_LISTA_HORARIO_ATENCION_BY_DOCENTE(
+@docente bigint
+)
+as
+select id,convert(varchar,fecha,121),convert(varchar,hora_ini,8),convert(varchar,hora_fin,8) 
+from tb_atencion_docente where id_docente=@docente
+go
+
+create procedure SP_AGREGAR_HOARIO_ATENCION_BY_DOCENTE(
+@docente bigint,
+@fecha date,
+@inicio time,
+@fin time
+)
+as
+insert into tb_atencion_docente (fecha,hora_ini,hora_fin,id_docente) values (@fecha,@inicio,@fin,@docente)
+go
+
+create procedure SP_BUSCA_HORARIO_ATENCION_BY_ATENCION(
+@horario bigint,
+@docente bigint
+)
+as
+select id,convert(varchar,fecha,121),convert(varchar,hora_ini,8),convert(varchar,hora_fin,8) 
+from tb_atencion_docente 
+where id=@horario and id_docente=@docente
+go
+
+create procedure SP_ACTUALIZA_HORARIO_ATENCION_BY_ATENCION(
+@horario bigint,
+@docente bigint,
+@fecha date,
+@inicio time,
+@fin time
+)
+as
+update tb_atencion_docente set fecha=@fecha,hora_ini=@inicio,hora_fin=@fin 
+where id=@horario and id_docente=@docente
+go
+create procedure SP_ELIMINA_HORARIO_ATENCION_BY_ATENCION(
+@atencion bigint,
+@docente bigint
+)
+as
+delete from tb_atencion_docente where id=@atencion and id_docente=@docente
 go
 
 
@@ -604,6 +653,70 @@ select @mt=id_matricula from tb_matricula_cursos where id=@curso_matricula
 select us.id,us.nombre,us.apellidos from tb_matricula mt 
 inner join tb_usuarios us on us.id=mt.id_alumno
 where mt.id=@mt
+go
+create procedure SP_LISTA_MATRICULAS_BY_ALUMNO(
+@alumno bigint
+)
+as
+select gr.descripcion as 'grado',sc.descripcion as 'seccion',cl.nombre as 'ciclo',
+case
+	when gr.estado=1 then 'Activo'
+	when gr.estado=0 then 'Inactivo'
+	when gr.estado=2 then 'Finalizado'
+end as 'estado' 
+from tb_matricula mt
+inner join tb_grados gr on mt.id_grado=gr.id
+inner join tb_secciones sc on sc.id=mt.id
+inner join tb_cliclo_academico cl on cl.id=mt.id_ciclo_acdemico
+where mt.id_alumno=@alumno
+go
+create procedure SP_LISTAR_MATRICULAS_BY_ALUMNO(
+@id_alumno bigint
+)
+as
+select mt.id,gr.descripcion,sc.descripcion,cl.nombre,
+case
+	when mt.estado = 0 then 'Inactivo'
+	when mt.estado = 1 then 'Activo'
+	when mt.estado = 2 then 'Finalizado'
+end as 'estado' 
+from tb_matricula mt
+inner join tb_grados gr on gr.id=mt.id_grado
+inner join tb_secciones sc on sc.id=mt.id_seccion
+inner join tb_cliclo_academico cl on mt.id_ciclo_acdemico=cl.id 
+where id_alumno=@id_alumno
+go
+create procedure SP_LISTAR_CURSOS_MATRICULA_BY_ALUMNO(
+@id_matricula bigint,
+@id_alumno bigint
+)
+as
+DECLARE
+@match int = 0
+select @match=count(*) from tb_matricula where id=@id_matricula and id_alumno=@id_alumno
+if(@match > 0)
+select mtCr.id,cr.id as 'cursoId',cr.descripcion,us.id,us.nombre,us.apellidos
+from tb_matricula_cursos mtCr
+inner join tb_cursos cr on cr.id=mtCr.id
+inner join tb_usuarios us on mtCr.id_docente=us.id
+where mtCr.id_matricula=@id_matricula and id_docente is not null
+go
+create procedure SP_LISTAR_DETALLE_CURSO_MATRICULA_BY_ALUMNO(
+@mat_curso bigint,
+@alumno bigint
+)
+as
+declare
+@match int =0,
+@matricula bigint
+
+select @matricula=count(*) from tb_matricula_cursos where id=@mat_curso
+select @match=count(*) from tb_matricula where id_alumno=@alumno and id=@matricula
+if(@match>0)
+select dtll.nota,dtll.porcentaje,es.descripcion,convert(varchar,dtll.fech_reg,10) as 'fecha' 
+from tb_detalle_matricula_curso dtll
+inner join tb_especificacion es on dtll.id_espec=es.id
+where id_mat_cur=@mat_curso
 go
 
 
@@ -1404,7 +1517,6 @@ create procedure SP_ELIMINA_DETALLE_TO_DETALLEMATRICULACURSO(
 as
 DELETE FROM tb_detalle_matricula_curso where id=@detalle
 go
-
 --Reporte Padres
 create procedure SP_LISTAR_MIS_HIJOS(
 @id_apoderado bigint
@@ -1448,9 +1560,18 @@ inner join tb_usuarios us on mtCr.id_docente=us.id
 where mtCr.id_matricula=@id_matricula and id_docente is not null
 go
 create procedure SP_LISTAR_DETALLE_CURSO_MATRICULA(
-@mat_curso bigint
+@mat_curso bigint,
+@padre bigint
 )
 as
+declare
+@match int = 0,
+@matricula bigint=0,
+@alumno bigint=0
+select @matricula=id_matricula from tb_matricula_cursos where id=@mat_curso
+select @alumno=id_alumno from tb_matricula where id=@matricula
+select @match=count(*) from tb_apoderado_alumno where id_alumno=@alumno and id_apoderado=@padre
+if @match>0
 select dtll.nota,dtll.porcentaje,es.descripcion,convert(varchar,dtll.fech_reg,10) as 'fecha' 
 from tb_detalle_matricula_curso dtll
 inner join tb_especificacion es on dtll.id_espec=es.id
